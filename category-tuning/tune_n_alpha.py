@@ -1,5 +1,6 @@
 from preprocessing.dataset_ingestion import build_user_interactions
 from collections import Counter
+import matplotlib.pyplot as plt
 import numpy as np
 import math
 
@@ -64,8 +65,35 @@ def analyze_alpha(user_interactions, N, alpha_values):
 if __name__ == "__main__":
     user_interactions = build_user_interactions()
 
-    N_values = [5, 10, 15, 20, 25, 30]
-    print(analyze_N(user_interactions, N_values))
+    N_values = np.arange(5, 50, 5)
+    N_results = analyze_N(user_interactions, N_values)
 
-    alpha_values = [0.2, 0.3, 0.4, 0.5, 0.6, 0.65, 0.7]
-    print(analyze_alpha(user_interactions, N=10, alpha_values=alpha_values))
+    N_vals = list(N_results.keys())
+    coverage = [N_results[n]["coverage_ratio"] for n in N_vals]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(N_vals, coverage, marker='o')
+    plt.xlabel('N (number of recent interactions)')
+    plt.ylabel('Coverage Ratio')
+    plt.title('User Coverage by Minimum Interactions Required')
+    plt.grid(True)
+    plt.show()
+
+    alpha_values = np.arange(0.1, 0.80, 0.02)
+    #print(analyze_alpha(user_interactions, N=10, alpha_values=alpha_values))
+ 
+    alpha_results = analyze_alpha(user_interactions, N=10, alpha_values=alpha_values)
+    
+    alphas = list(alpha_results.keys())
+    avg_dominant = [alpha_results[a]["avg_dominant_categories"] for a in alphas]
+    zero_dominant = [alpha_results[a]["zero_dominant_ratio"] for a in alphas]
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(alphas, avg_dominant, marker='o', linewidth=2, label='Avg Dominant Categories')
+    plt.plot(alphas, zero_dominant, marker='s', linewidth=2, label='Zero Dominant Ratio')
+    plt.xlabel('Alpha (threshold ratio)')
+    plt.ylabel('Value')
+    plt.title('Alpha Analysis: Average Dominant Categories vs Zero Dominant Ratio')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
