@@ -79,33 +79,33 @@ def sort_user_interactions(user_interactions):
     return user_interactions
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    #TASK 1
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+#     #TASK 1
+#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    NEWS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
-    )
-    BEHAVIORS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
-    )
+#     NEWS_PATH = os.path.join(
+#         BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
+#     )
+#     BEHAVIORS_PATH = os.path.join(
+#         BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
+#     )
 
-    print("Loading news categories...")
-    news_category_map = load_news_categories(NEWS_PATH)
+#     print("Loading news categories...")
+#     news_category_map = load_news_categories(NEWS_PATH)
 
-    print("Loading user interactions...")
-    user_interactions = load_user_interactions(
-        BEHAVIORS_PATH,
-        news_category_map
-    )
-    #TASK 2
-    print("Sorting interactions by time...")
-    user_interactions = sort_user_interactions(user_interactions)
+#     print("Loading user interactions...")
+#     user_interactions = load_user_interactions(
+#         BEHAVIORS_PATH,
+#         news_category_map
+#     )
+#     #TASK 2
+#     print("Sorting interactions by time...")
+#     user_interactions = sort_user_interactions(user_interactions)
 
-    # Sanity check
-    sample_user = next(iter(user_interactions))
-    print(f"\nSample user: {sample_user}")
-    print(user_interactions[sample_user][:5])
+#     # Sanity check
+#     sample_user = next(iter(user_interactions))
+#     print(f"\nSample user: {sample_user}")
+#     print(user_interactions[sample_user][:5])
 
     
