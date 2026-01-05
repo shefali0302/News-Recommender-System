@@ -8,6 +8,15 @@ from collections import defaultdict
 from datetime import datetime
 from tqdm import tqdm
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+NEWS_PATH = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
+    )
+BEHAVIORS_PATH = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
+    )
+
 def load_news_categories(news_path):
     """
     Returns: dict {news_id: category}

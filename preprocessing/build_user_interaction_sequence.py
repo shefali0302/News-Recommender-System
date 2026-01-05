@@ -4,12 +4,12 @@ Builds user interaction sequences with time gaps.
 """
 
 import os
-from preprocessing.dataset_ingestion import (
+from dataset_ingestion import (
     load_news_categories,
     load_user_interactions,
     sort_user_interactions
 )
-from preprocessing.time_gap import compute_time_gaps
+from time_gap import compute_time_gaps
 
 
 def build_user_interaction_sequences(data_dir):
