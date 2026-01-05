@@ -8,6 +8,15 @@ from collections import defaultdict
 from datetime import datetime
 from tqdm import tqdm
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+NEWS_PATH = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
+    )
+BEHAVIORS_PATH = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
+    )
+
 def load_news_categories(news_path):
     """
     Returns: dict {news_id: category}
@@ -165,19 +174,21 @@ def detect_dominant_categories(user_recent_interactions, N, alpha):
 
     return user_dominant_categories
 
+def build_user_interactions():
+    news_category_map = load_news_categories(NEWS_PATH)
+    user_interactions = load_user_interactions(
+        BEHAVIORS_PATH, news_category_map
+    )
+    user_interactions = sort_user_interactions(user_interactions)
+    user_interactions = compute_time_gaps(user_interactions)
+    return user_interactions
 
 
 if __name__ == "__main__":
+    
 
     #TASK 1
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    NEWS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
-    )
-    BEHAVIORS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
-    )
+    
 
     print("Loading news categories...")
     news_category_map = load_news_categories(NEWS_PATH)
@@ -228,6 +239,8 @@ if __name__ == "__main__":
     sample_user = next(iter(user_dominant_categories))
     print(f"\nSample user's dominant categories: {sample_user}")
     print(user_dominant_categories[sample_user])
+
+    user_interactions=build_user_interactions()
 
 
 
