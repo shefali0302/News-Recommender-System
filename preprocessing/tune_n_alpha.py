@@ -1,4 +1,5 @@
-from build_user_interaction_sequence import build_user_interaction_sequences
+from sequence_builder import build_user_interaction_sequences
+from utils import get_last_n_interactions, compute_dominant_categories
 from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,24 +28,15 @@ def analyze_N(user_interactions, N_values):
 
 def analyze_alpha(user_interactions, N, alpha_values):
     alpha_results = {}
+    recent=get_last_n_interactions(user_interactions, N)
+
+    #print(recent)
 
     for alpha in alpha_values:
         dominant_counts = []
 
-        for interactions in user_interactions.values():
-            if len(interactions) < N:
-                continue
-
-            recent = interactions[-N:]
-            categories = [x[2] for x in recent]
-
-            freq = Counter(categories)
-            theta = math.ceil(alpha * N)
-
-            dominant = [
-                cat for cat, count in freq.items()
-                if count >= theta
-            ]
+        for interactions in recent.values():
+            dominant = compute_dominant_categories(interactions, alpha)
 
             dominant_counts.append(len(dominant))
 
@@ -53,8 +45,7 @@ def analyze_alpha(user_interactions, N, alpha_values):
                 np.mean(dominant_counts), 2
             ),
             "zero_dominant_ratio": round(
-                sum(1 for x in dominant_counts if x == 0) / len(dominant_counts),
-                3
+                sum(1 for x in dominant_counts if x == 0) / len(dominant_counts),3
             )
         }
 
@@ -63,7 +54,7 @@ def analyze_alpha(user_interactions, N, alpha_values):
 if __name__ == "__main__":
     user_sequences = build_user_interaction_sequences("../data/MINDsmall_train")
 
-    N_values = np.arange(5, 50, 5)
+    '''N_values = np.arange(5, 50, 5)
     N_results = analyze_N(user_sequences, N_values)
 
     N_vals = list(N_results.keys())
@@ -75,7 +66,7 @@ if __name__ == "__main__":
     plt.ylabel('Coverage Ratio')
     plt.title('User Coverage by Minimum Interactions Required')
     plt.grid(True)
-    plt.show()
+    plt.show()'''
 
     alpha_values = np.arange(0.1, 0.80, 0.02)
     #print(analyze_alpha(user_interactions, N=10, alpha_values=alpha_values))
