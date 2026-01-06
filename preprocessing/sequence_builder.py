@@ -34,9 +34,7 @@ def compute_time_gaps(user_interactions):
             else:
                 delta_t = (timestamp - prev_time).total_seconds()
 
-            enriched_interactions.append(
-                (news_id, timestamp, category, delta_t)
-            )
+            enriched_interactions.append((news_id, timestamp, category, delta_t))
 
             prev_time = timestamp
 
@@ -60,14 +58,10 @@ def build_user_interaction_sequences(data_dir):
 
     news_category_map = load_news_categories(news_path)
 
-    user_interactions = load_user_interactions(
-        behaviors_path, news_category_map
-    )
+    user_interactions = load_user_interactions(behaviors_path, news_category_map)
 
     user_interactions = sort_user_interactions(user_interactions)
 
-    user_interactions_with_dt = compute_time_gaps(
-        user_interactions
-    )
+    user_interactions_with_dt = compute_time_gaps(user_interactions)
 
     return user_interactions_with_dt
