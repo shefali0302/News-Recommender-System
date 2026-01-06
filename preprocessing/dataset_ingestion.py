@@ -35,15 +35,27 @@ def load_user_interactions(behaviors_path, news_category_map):
     dict {user_id: [(news_id, timestamp, category), ...]}
     """
 
+   # behaviors_df = pd.read_csv(
+    #    behaviors_path,
+     #   sep="\t",
+     #   header=None,
+    #  names=[
+     #       "impression_id", "user_id",
+      #      "time", "history", "impressions"
+       # ]
+    #)
+
     behaviors_df = pd.read_csv(
-        behaviors_path,
-        sep="\t",
-        header=None,
-        names=[
-            "impression_id", "user_id",
-            "time", "history", "impressions"
-        ]
-    )
+    behaviors_path,
+    sep="\t",
+    header=None,
+    names=[
+        "impression_id", "user_id",
+        "time", "history", "impressions"
+    ],
+    dtype=str   # 👈 VERY IMPORTANT
+)
+
 
     user_interactions = defaultdict(list)
 
@@ -166,6 +178,33 @@ def detect_dominant_categories(user_recent_interactions, N, alpha):
     return user_dominant_categories
 
 
+    #modification
+def get_user_interactions_with_dt():
+    """
+    Runs preprocessing pipeline and returns user_interactions_with_dt
+    """
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    NEWS_PATH = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
+    )
+    BEHAVIORS_PATH = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
+    )
+
+    news_category_map = load_news_categories(NEWS_PATH)
+
+    user_interactions = load_user_interactions(
+        BEHAVIORS_PATH, news_category_map
+    )
+
+    user_interactions = sort_user_interactions(user_interactions)
+
+    user_interactions_with_dt = compute_time_gaps(user_interactions)
+
+    return user_interactions_with_dt
+
 
 if __name__ == "__main__":
 
@@ -228,6 +267,13 @@ if __name__ == "__main__":
     sample_user = next(iter(user_dominant_categories))
     print(f"\nSample user's dominant categories: {sample_user}")
     print(user_dominant_categories[sample_user])
+
+    #masking check
+    print("get_user_interactions_with_dt" in globals())
+
+    
+
+
 
 
 
