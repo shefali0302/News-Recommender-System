@@ -14,7 +14,6 @@ from utils import (
     apply_time_mask,
     apply_category_mask,
     apply_hybrid_mask,
-    compute_dominant_categories_all_users,
     N,
     alpha
 )
@@ -83,9 +82,11 @@ def run_short_term_pipeline(N, alpha):
     # 6. Detect Dominant Categories
     # --------------------------------------------------
     print(f"6️⃣ Detecting dominant categories (alpha={alpha})...")
-    user_dominant_categories = compute_dominant_categories_all_users(
-        user_recent_interactions, alpha
-    )
+    user_dominant_categories = {}
+    for user_id, interactions in user_recent_interactions.items():
+        user_dominant_categories[user_id] = set(
+            compute_dominant_categories(interactions, alpha)
+        )
 
     print(f"🔍 Sample user dominant categories:")
     print(user_dominant_categories[sample_user], "\n")
@@ -139,4 +140,4 @@ def run_short_term_pipeline(N, alpha):
 
 
 if __name__ == "__main__":
-    run_short_term_pipeline(N=10, alpha=0.4) 
+    run_short_term_pipeline(N, alpha) 
