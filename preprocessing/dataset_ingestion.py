@@ -7,6 +7,16 @@ import pandas as pd
 from collections import defaultdict
 from datetime import datetime
 from tqdm import tqdm
+#from sequence_builder import compute_time_gaps, sort_user_interactions
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+NEWS_PATH = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
+    )
+BEHAVIORS_PATH = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
+    )
 
 def load_news_categories(news_path):
     """
@@ -35,15 +45,6 @@ def load_user_interactions(behaviors_path, news_category_map):
     dict {user_id: [(news_id, timestamp, category), ...]}
     """
 
-   # behaviors_df = pd.read_csv(
-    #    behaviors_path,
-     #   sep="\t",
-     #   header=None,
-    #  names=[
-     #       "impression_id", "user_id",
-      #      "time", "history", "impressions"
-       # ]
-    #)
 
     behaviors_df = pd.read_csv(
     behaviors_path,
@@ -53,7 +54,7 @@ def load_user_interactions(behaviors_path, news_category_map):
         "impression_id", "user_id",
         "time", "history", "impressions"
     ],
-    dtype=str   # 👈 VERY IMPORTANT
+    #dtype=str   # VERY IMPORTANT
 )
 
 
@@ -90,28 +91,26 @@ def sort_user_interactions(user_interactions):
         )
     return user_interactions
 
-def compute_time_gaps(user_interactions):
-    """
-    Input:
-      dict {user_id: [(news_id, timestamp, category), ...]}
 
-    Output:
-      dict {user_id: [(news_id, timestamp, category, delta_t), ...]}
-      where delta_t is time gap in seconds
-    """
+# if __name__ == "__main__":
 
-    user_interactions_with_dt = {}
+#     #TASK 1
+#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    for user_id, interactions in user_interactions.items():
-        enriched_interactions = []
+#     NEWS_PATH = os.path.join(
+#         BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
+#     )
+#     BEHAVIORS_PATH = os.path.join(
+#         BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
+#     )
 
-        prev_time = None
+''' prev_time = None
 
-        for news_id, timestamp, category in interactions:
-            if prev_time is None:
-                delta_t = 0.0  # first interaction
-            else:
-                delta_t = (timestamp - prev_time).total_seconds()
+    for news_id, timestamp, category in interactions:
+        if prev_time is None:
+            delta_t = 0.0  # first interaction
+        else:
+            delta_t = (timestamp - prev_time).total_seconds()
 
             enriched_interactions.append(
                 (news_id, timestamp, category, delta_t)
@@ -121,8 +120,8 @@ def compute_time_gaps(user_interactions):
 
         user_interactions_with_dt[user_id] = enriched_interactions
 
-    return user_interactions_with_dt
-
+    return user_interactions_with_dt'''
+'''
 def extract_sliding_window(user_interactions_with_dt, N):
     """
     Input:
@@ -141,9 +140,9 @@ def extract_sliding_window(user_interactions_with_dt, N):
             user_recent_interactions[user_id] = interactions[-N:]
 
     return user_recent_interactions
+'''
 
-
-import math
+'''import math
 from collections import Counter
 
 def detect_dominant_categories(user_recent_interactions, N, alpha):
@@ -270,10 +269,27 @@ if __name__ == "__main__":
 
     #masking check
     print("get_user_interactions_with_dt" in globals())
+    '''
 
     
 
 
 
+#     print("Loading news categories...")
+#     news_category_map = load_news_categories(NEWS_PATH)
 
+#     print("Loading user interactions...")
+#     user_interactions = load_user_interactions(
+#         BEHAVIORS_PATH,
+#         news_category_map
+#     )
+#     #TASK 2
+#     print("Sorting interactions by time...")
+#     user_interactions = sort_user_interactions(user_interactions)
 
+#     # Sanity check
+#     sample_user = next(iter(user_interactions))
+#     print(f"\nSample user: {sample_user}")
+#     print(user_interactions[sample_user][:5])
+
+    

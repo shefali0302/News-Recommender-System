@@ -1,243 +1,142 @@
-import numpy as np
-from .dataset_ingestion import get_user_interactions_with_dt
-from .dataset_ingestion import extract_sliding_window
-from .dataset_ingestion import detect_dominant_categories
+"""
+Short-term preprocessing pipeline
+ORCHESTRATION ONLY – zero redundant logic
+"""
+
+import os
+
+from dataset_ingestion import load_news_categories, load_user_interactions, NEWS_PATH
+from sequence_builder import sort_user_interactions, compute_time_gaps
+from utils import (
+    get_last_n_interactions,
+    compute_dominant_categories,
+    compute_time_thresholds,
+    apply_time_mask,
+    apply_category_mask,
+    apply_hybrid_mask,
+    compute_dominant_categories_all_users,
+    N,
+    alpha
+)
 
 
-def compute_time_thresholds(user_interactions_with_dt):
-    """
-    Computes 50th and 75th percentile of Δt values (in seconds)
-    Returns both thresholds
-    """
-    all_dts = []
+def run_short_term_pipeline(N, alpha):
+    print("\n========== SHORT-TERM PREPROCESSING START ==========\n")
 
-    for interactions in user_interactions_with_dt.values():
-        for _, _, _, dt in interactions:
-            if dt > 0:
-                all_dts.append(dt)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    
+    # --------------------------------------------------
+    # 1. Load News Categories
+    # --------------------------------------------------
+    print("1️⃣ Loading news categories...")
+    news_category_map = load_news_categories(NEWS_PATH)
+    print(f"✔ Total news articles: {len(news_category_map)}\n")
 
-    all_dts = np.array(all_dts)
+    # --------------------------------------------------
+    # 2. Load Raw User Interactions
+    # --------------------------------------------------
+    print("2️⃣ Loading raw user interactions...")
+    behaviors_path = os.path.join(
+        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
+    )
+    
+    user_interactions = load_user_interactions(
+        behaviors_path, news_category_map
+    )
+    
 
-    tau_50 = np.percentile(all_dts, 50)
-    tau_75 = np.percentile(all_dts, 75)
+    print(f"✔ Total users: {len(user_interactions)}")
+    sample_user = next(iter(user_interactions))
+    print(f"🔍 Sample user (raw): {sample_user}")
+    print(user_interactions[sample_user][:5], "\n")
+    
+    # --------------------------------------------------
+    # 3. Sort Interactions by Time
+    # --------------------------------------------------
+    print("3️⃣ Sorting interactions by timestamp...")
+    user_interactions = sort_user_interactions(user_interactions)
 
-    return tau_50, tau_75
+    print(f"🔍 Sample user (sorted): {sample_user}")
+    print(user_interactions[sample_user][:5], "\n")
 
+    # --------------------------------------------------
+    # 4. Compute Time Gaps (Δt)
+    # --------------------------------------------------
+    print("4️⃣ Computing time gaps (Δt)...")
+    user_interactions_with_dt = compute_time_gaps(user_interactions)
 
-def compute_short_term_retention(user_recent_interactions, tau):
-    """
-    Computes Short-Term Retention Ratio (STRR) for a given τ
-    """
-    total = 0
-    retained = 0
+    print(f"🔍 Sample user (with Δt): {sample_user}")
+    print(user_interactions_with_dt[sample_user][:5], "\n")
 
-    for interactions in user_recent_interactions.values():
-        for _, _, _, delta_t in interactions:
-            total += 1
-            if delta_t <= tau:
-                retained += 1
-
-    return retained / total if total > 0 else 0
-
-
-def select_best_threshold(user_recent_interactions, tau_50, tau_75):
-    """
-    Chooses the better τ based on short-term retention metric
-    """
-    strr_50 = compute_short_term_retention(user_recent_interactions, tau_50)
-    strr_75 = compute_short_term_retention(user_recent_interactions, tau_75)
-
-    print(f"STRR @ τ50 ({tau_50:.2f}s): {strr_50:.4f}")
-    print(f"STRR @ τ75 ({tau_75:.2f}s): {strr_75:.4f}")
-
-    # Prefer higher retention but avoid extreme looseness
-    if strr_75 - strr_50 >= 0.05:
-        chosen_tau = tau_75
-        reason = "Higher short-term retention with acceptable recency"
-    else:
-        chosen_tau = tau_50
-        reason = "More conservative threshold with sufficient retention"
-
-    print(f"Chosen τ: {chosen_tau:.2f}s → {reason}")
-
-    return chosen_tau
-
-
-def apply_time_mask(user_recent_interactions, tau):
-    """
-    Applies time-based masking
-    """
-    user_time_masks = {}
-
-    for user_id, interactions in user_recent_interactions.items():
-        masked = []
-        for news_id, timestamp, category, delta_t in interactions:
-            m_time = 1 if delta_t <= tau else 0
-            masked.append((news_id, category, delta_t, m_time))
-
-        user_time_masks[user_id] = masked
-
-    return user_time_masks
-
-def apply_category_mask(user_time_masked, user_dominant_categories):
-    """
-    Input:
-      user_time_masked:
-        dict {user_id: [(news_id, category, delta_t, m_time), ...]}
-
-      user_dominant_categories:
-        dict {user_id: set(categories)}
-
-    Output:
-      dict {user_id: [(news_id, category, delta_t, m_time, m_cat), ...]}
-    """
-
-    user_category_masked = {}
-
-    for user_id, interactions in user_time_masked.items():
-        dominant_categories = user_dominant_categories[user_id]
-        masked = []
-
-        for news_id, category, delta_t, m_time in interactions:
-            m_cat = 1 if category in dominant_categories else 0
-            masked.append(
-                (news_id, category, delta_t, m_time, m_cat)
-            )
-
-        user_category_masked[user_id] = masked
-
-    return user_category_masked
-
-def apply_hybrid_mask(user_category_masked):
-    """
-    Output:
-      dict {user_id: [(news_id, category, delta_t, m), ...]}
-    """
-
-    user_hybrid_masked = {}
-
-    for user_id, interactions in user_category_masked.items():
-        hybrid = []
-
-        for news_id, category, delta_t, m_time, m_cat in interactions:
-            m = m_time * m_cat
-            hybrid.append(
-                (news_id, category, delta_t, m)
-            )
-
-        user_hybrid_masked[user_id] = hybrid
-
-    return user_hybrid_masked
-
-def initialize_embeddings(news_ids, categories, news_dim=64, category_dim=16):
-    """
-    Returns:
-      news_embedding_matrix: dict {news_id: vector}
-      category_embedding_matrix: dict {category: vector}
-    """
-
-    news_embedding_matrix = {
-        nid: np.random.randn(news_dim)
-        for nid in news_ids
-    }
-
-    category_embedding_matrix = {
-        cat: np.random.randn(category_dim)
-        for cat in categories
-    }
-
-    return news_embedding_matrix, category_embedding_matrix
-
-def build_dense_interaction_vectors(
-    user_hybrid_masked,
-    news_embedding_matrix,
-    category_embedding_matrix
-):
-    """
-    Output:
-      dict {user_id: [dense_vector, ...]}
-    """
-
-    user_dense_vectors = {}
-
-    for user_id, interactions in user_hybrid_masked.items():
-        vectors = []
-
-        for news_id, category, delta_t, m in interactions:
-            news_vec = news_embedding_matrix[news_id]
-            cat_vec = category_embedding_matrix[category]
-
-            combined = np.concatenate([news_vec, cat_vec])
-
-            # apply hybrid mask
-            combined = m * combined
-
-            vectors.append(combined)
-
-        user_dense_vectors[user_id] = vectors
-
-    return user_dense_vectors
-
-
-if __name__ == "__main__":
-    print("Loading user interactions with time gaps...")
-    user_interactions_with_dt = get_user_interactions_with_dt()
-
-    print("Extracting sliding window...")
-    N = 10
-    user_recent_interactions = extract_sliding_window(
+    # --------------------------------------------------
+    # 5. Get Last N Interactions (Sliding Window)
+    # --------------------------------------------------
+    print(f"5️⃣ Extracting last N={N} interactions...")
+    user_recent_interactions = get_last_n_interactions(
         user_interactions_with_dt, N
     )
 
-    print("Detecting dominant categories...")
-    alpha = 0.4
-    user_dominant_categories = detect_dominant_categories(
-        user_recent_interactions, N, alpha
+    print(f"🔍 Sample user (last {N}): {sample_user}")
+    print(user_recent_interactions[sample_user], "\n")
+
+    # --------------------------------------------------
+    # 6. Detect Dominant Categories
+    # --------------------------------------------------
+    print(f"6️⃣ Detecting dominant categories (alpha={alpha})...")
+    user_dominant_categories = compute_dominant_categories_all_users(
+        user_recent_interactions, alpha
     )
 
-    print("Computing percentile-based thresholds...")
+    print(f"🔍 Sample user dominant categories:")
+    print(user_dominant_categories[sample_user], "\n")
+
+    # --------------------------------------------------
+    # 7. Compute Time Thresholds (τ)
+    # --------------------------------------------------
+    print("7️⃣ Computing percentile-based time thresholds...")
     tau_50, tau_75 = compute_time_thresholds(user_interactions_with_dt)
 
-    print("Selecting best threshold using short-term retention metric...")
-    tau = select_best_threshold(
-        user_recent_interactions, tau_50, tau_75
-    )
+    print(f"τ50 (median Δt): {tau_50:.2f} seconds")
+    print(f"τ75 (75th percentile Δt): {tau_75:.2f} seconds")
 
-    print("Applying time-based masking...")
+    tau = tau_50  # conservative default
+    print(f"✔ Selected τ = {tau:.2f} seconds\n")
+
+    # --------------------------------------------------
+    # 8. Apply Time Mask
+    # --------------------------------------------------
+    print("8️⃣ Applying time-based mask...")
     user_time_masked = apply_time_mask(
         user_recent_interactions, tau
     )
 
-    print("Applying category-based masking...")
+    print(f"🔍 Sample user (time-masked):")
+    print(user_time_masked[sample_user], "\n")
+
+    # --------------------------------------------------
+    # 9. Apply Category Mask
+    # --------------------------------------------------
+    print("9️⃣ Applying category-based mask...")
     user_category_masked = apply_category_mask(
-        user_time_masked,
-        user_dominant_categories
+        user_time_masked, user_dominant_categories
     )
 
-    print("Applying hybrid masking...")
+    print(f"🔍 Sample user (category-masked):")
+    print(user_category_masked[sample_user], "\n")
+
+    # --------------------------------------------------
+    # 10. Apply Hybrid Mask
+    # --------------------------------------------------
+    print("🔟 Applying hybrid (time × category) mask...")
     user_hybrid_masked = apply_hybrid_mask(user_category_masked)
 
-    print("Initializing embeddings...")
-    all_news_ids = set()
-    all_categories = set()
+    print(f"🔍 Sample user (hybrid-masked):")
+    print(user_hybrid_masked[sample_user], "\n")
 
-    for interactions in user_hybrid_masked.values():
-        for news_id, category, _, _ in interactions:
-            all_news_ids.add(news_id)
-            all_categories.add(category)
+    print("========== SHORT-TERM PREPROCESSING END ==========\n")
 
-    news_emb, category_emb = initialize_embeddings(
-        all_news_ids, all_categories
-    )
+    return user_hybrid_masked
 
-    print("Building dense interaction vectors...")
-    user_dense_vectors = build_dense_interaction_vectors(
-        user_hybrid_masked,
-        news_emb,
-        category_emb
-    )
 
-    # ONE sanity check only
-    sample_user = next(iter(user_dense_vectors))
-    print("\nSample user:", sample_user)
-    print("Dense vector shape:", user_dense_vectors[sample_user][0].shape)
+if __name__ == "__main__":
+    run_short_term_pipeline(N=10, alpha=0.4) 
