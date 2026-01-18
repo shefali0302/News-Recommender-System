@@ -5,9 +5,9 @@ ORCHESTRATION ONLY – zero redundant logic
 
 import os
 
-from dataset_ingestion import load_news_categories, load_user_interactions, NEWS_PATH
-from sequence_builder import sort_user_interactions, compute_time_gaps
-from utils import (
+from preprocessing.dataset_ingestion import load_news_categories, load_user_interactions, NEWS_PATH
+from preprocessing.sequence_builder import sort_user_interactions, compute_time_gaps
+from preprocessing.utils import (
     get_last_n_interactions,
     compute_dominant_categories,
     compute_time_thresholds,

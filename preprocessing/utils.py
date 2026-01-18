@@ -50,7 +50,7 @@ def apply_time_mask(user_recent_interactions, tau):
         ]
 
     return masked
-
+'''
 def apply_category_mask(user_time_masked, user_dominant_categories):
     masked = {}
 
@@ -60,6 +60,24 @@ def apply_category_mask(user_time_masked, user_dominant_categories):
             (*x, 1 if x[1] in dom else 0)
             for x in interactions
         ]
+
+    return masked
+'''
+
+def apply_category_mask(user_time_masked, user_dominant_categories):
+    masked = {}
+
+    for u, interactions in user_time_masked.items():
+        dom = user_dominant_categories[u]
+
+        # ✅ fallback: allow all categories if none are dominant
+        if not dom:
+            masked[u] = [(*x, 1) for x in interactions]
+        else:
+            masked[u] = [
+                (*x, 1 if x[1] in dom else 0)
+                for x in interactions
+            ]
 
     return masked
 
