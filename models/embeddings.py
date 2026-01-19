@@ -114,13 +114,13 @@ def build_short_term_embeddings(
       user_dense_vectors: dict {user_id: [dense_vector, ...]}
     """
 
-    # 1️⃣ Run preprocessing (REUSED, not duplicated)
+    # Run preprocessing (REUSED, not duplicated)
     user_hybrid_masked = run_short_term_pipeline(N, alpha)
 
-    # 2️⃣ Extract vocab
+    # Extract vocab
     news_ids, categories = extract_embedding_vocab(user_hybrid_masked)
 
-    # 3️⃣ Initialize embeddings
+    # Initialize embeddings
     news_emb, cat_emb = initialize_embeddings(
         news_ids,
         categories,
