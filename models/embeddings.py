@@ -5,13 +5,10 @@ Builds dense vector representations from short-term preprocessing output
 
 import numpy as np
 
-# ---- imports from preprocessing layer ----
 from preprocessing.short_term_preprocessing import run_short_term_pipeline
 from preprocessing.utils import N, alpha
 
-# --------------------------------------------------
 # Step 1: Extract Vocabulary from Preprocessed Output
-# --------------------------------------------------
 def extract_embedding_vocab(user_hybrid_masked):
     """
     Input:
@@ -32,9 +29,7 @@ def extract_embedding_vocab(user_hybrid_masked):
     return news_ids, categories
 
 
-# --------------------------------------------------
 # Step 2: Initialize Embedding Matrices
-# --------------------------------------------------
 def initialize_embeddings(
     news_ids,
     categories,
@@ -62,9 +57,8 @@ def initialize_embeddings(
     return news_embedding_matrix, category_embedding_matrix
 
 
-# --------------------------------------------------
 # Step 3: Build Dense Interaction Embeddings
-# --------------------------------------------------
+
 def build_dense_interaction_vectors(
     user_hybrid_masked,
     news_embedding_matrix,
@@ -100,9 +94,7 @@ def build_dense_interaction_vectors(
     return user_dense_vectors
 
 
-# --------------------------------------------------
 # Step 4: End-to-End Embedding Pipeline
-# --------------------------------------------------
 def build_short_term_embeddings(
     news_dim=64,
     category_dim=16
@@ -128,7 +120,7 @@ def build_short_term_embeddings(
         category_dim=category_dim
     )
 
-    # 4️⃣ Build dense vectors
+    # Build dense vectors
     user_dense_vectors = build_dense_interaction_vectors(
         user_hybrid_masked,
         news_emb,
@@ -138,9 +130,7 @@ def build_short_term_embeddings(
     return user_dense_vectors
 
 
-# --------------------------------------------------
 # Debug / Sanity Check
-# --------------------------------------------------
 if __name__ == "__main__":
     user_dense_vectors = build_short_term_embeddings()
 
