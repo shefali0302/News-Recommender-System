@@ -84,6 +84,39 @@ def load_user_interactions(behaviors_path, news_category_map):
 
     return user_interactions
 
+def build_id_mappings(user_interactions):
+    """
+    Build integer ID mappings for news and categories.
+    Padding index 0 is reserved.
+    """
+    news_ids = set()
+    categories = set()
+
+    for interactions in user_interactions.values():
+        for news_id, _, category in interactions:
+            news_ids.add(news_id)
+            categories.add(category)
+
+    news2idx = {nid: i + 1 for i, nid in enumerate(news_ids)}
+    cat2idx  = {cat: i + 1 for i, cat in enumerate(categories)}
+
+    return news2idx, cat2idx
+
+def map_interactions_to_indices(user_interactions, news2idx, cat2idx):
+    """
+    Convert (news_id, timestamp, category)
+    → (news_idx, timestamp, cat_idx)
+    """
+    mapped = {}
+
+    for user_id, interactions in user_interactions.items():
+        mapped[user_id] = [
+            (news2idx[news_id], timestamp, cat2idx[category])
+            for news_id, timestamp, category in interactions
+        ]
+
+    return mapped
+
 def sort_user_interactions(user_interactions):
     for user_id in user_interactions:
         user_interactions[user_id].sort(
@@ -91,205 +124,3 @@ def sort_user_interactions(user_interactions):
         )
     return user_interactions
 
-
-# if __name__ == "__main__":
-
-#     #TASK 1
-#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-#     NEWS_PATH = os.path.join(
-#         BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
-#     )
-#     BEHAVIORS_PATH = os.path.join(
-#         BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
-#     )
-
-''' prev_time = None
-
-    for news_id, timestamp, category in interactions:
-        if prev_time is None:
-            delta_t = 0.0  # first interaction
-        else:
-            delta_t = (timestamp - prev_time).total_seconds()
-
-            enriched_interactions.append(
-                (news_id, timestamp, category, delta_t)
-            )
-
-            prev_time = timestamp
-
-        user_interactions_with_dt[user_id] = enriched_interactions
-
-    return user_interactions_with_dt'''
-'''
-def extract_sliding_window(user_interactions_with_dt, N):
-    """
-    Input:
-      dict {user_id: [(news_id, timestamp, category, delta_t), ...]}
-
-    Output:
-      dict {user_id: last N interactions}
-    """
-
-    user_recent_interactions = {}
-
-    for user_id, interactions in user_interactions_with_dt.items():
-        if len(interactions) <= N:
-            user_recent_interactions[user_id] = interactions
-        else:
-            user_recent_interactions[user_id] = interactions[-N:]
-
-    return user_recent_interactions
-'''
-
-'''import math
-from collections import Counter
-
-def detect_dominant_categories(user_recent_interactions, N, alpha):
-    """
-    Input:
-      dict {user_id: [(news_id, timestamp, category, delta_t), ...]}
-
-    Output:
-      dict {user_id: set of dominant categories}
-    """
-
-    user_dominant_categories = {}
-
-    for user_id, interactions in user_recent_interactions.items():
-        categories = [item[2] for item in interactions]
-
-        category_counts = Counter(categories)
-
-        theta = math.ceil(alpha * len(interactions))
-
-        dominant = [
-            cat for cat, count in category_counts.items()
-            if count >= theta
-        ]
-
-        if not dominant:
-            # fallback- most frequent category
-            dominant = [category_counts.most_common(1)[0][0]]
-
-        user_dominant_categories[user_id] = set(dominant)
-
-    return user_dominant_categories
-
-
-    #modification
-def get_user_interactions_with_dt():
-    """
-    Runs preprocessing pipeline and returns user_interactions_with_dt
-    """
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    NEWS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
-    )
-    BEHAVIORS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
-    )
-
-    news_category_map = load_news_categories(NEWS_PATH)
-
-    user_interactions = load_user_interactions(
-        BEHAVIORS_PATH, news_category_map
-    )
-
-    user_interactions = sort_user_interactions(user_interactions)
-
-    user_interactions_with_dt = compute_time_gaps(user_interactions)
-
-    return user_interactions_with_dt
-
-
-if __name__ == "__main__":
-
-    #TASK 1
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    NEWS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
-    )
-    BEHAVIORS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
-    )
-
-    print("Loading news categories...")
-    news_category_map = load_news_categories(NEWS_PATH)
-
-    print("Loading user interactions...")
-    user_interactions = load_user_interactions(
-        BEHAVIORS_PATH,
-        news_category_map
-    )
-    #TASK 2
-    print("Sorting interactions by time...")
-    user_interactions = sort_user_interactions(user_interactions)
-
-    # Sanity check
-    sample_user = next(iter(user_interactions))
-    print(f"\nSample user: {sample_user}")
-    print(user_interactions[sample_user][:5])
-
-    #TASK 3
-    print("Computing time gaps (Δt)...")
-    user_interactions_with_dt = compute_time_gaps(user_interactions)
-
-    # Sanity check
-    sample_user = next(iter(user_interactions_with_dt))
-    print(f"\nSample user with Δt: {sample_user}")
-    print(user_interactions_with_dt[sample_user][:5])
-
-    #TASK 4
-    N = 10
-    print(f"Extracting last {N} interactions per user...")
-    user_recent_interactions = extract_sliding_window(
-        user_interactions_with_dt, N
-    )
-
-    # Sanity check
-    sample_user = next(iter(user_recent_interactions))
-    print(f"\nSample user recent interactions (N={N}): {sample_user}")
-    print(user_recent_interactions[sample_user])
-
-    #TASK 5
-    alpha = 0.4
-    print("Detecting dominant categories...")
-    user_dominant_categories = detect_dominant_categories(
-        user_recent_interactions, N, alpha
-    )
-
-    # Sanity check
-    sample_user = next(iter(user_dominant_categories))
-    print(f"\nSample user's dominant categories: {sample_user}")
-    print(user_dominant_categories[sample_user])
-
-    #masking check
-    print("get_user_interactions_with_dt" in globals())
-    '''
-
-    
-
-
-
-#     print("Loading news categories...")
-#     news_category_map = load_news_categories(NEWS_PATH)
-
-#     print("Loading user interactions...")
-#     user_interactions = load_user_interactions(
-#         BEHAVIORS_PATH,
-#         news_category_map
-#     )
-#     #TASK 2
-#     print("Sorting interactions by time...")
-#     user_interactions = sort_user_interactions(user_interactions)
-
-#     # Sanity check
-#     sample_user = next(iter(user_interactions))
-#     print(f"\nSample user: {sample_user}")
-#     print(user_interactions[sample_user][:5])
-
-    
