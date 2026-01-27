@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from models.embeddings import JointEmbedding
+from models.ltc_encoder import LTCEncoder
 
 
 class LongTermModel(nn.Module):
@@ -87,3 +88,38 @@ class LongTermModel(nn.Module):
         delta_t = torch.tensor(day_gaps, dtype=torch.float32)   # (M,)
 
         return Z, delta_t
+
+class LongTermPipeline(nn.Module):
+    """
+    Complete short-term preference pipeline:
+    - Embedding extraction
+    - LTC encoding
+    
+    Combines ShortTermModel and LTCEncoder in a single end-to-end module.
+    """
+    
+    def __init__(
+        self,
+        num_news: int,
+        num_categories: int,
+        news_dim: int = 64,
+        category_dim: int = 16,
+        hidden_dim: int = 64
+    ):
+        super().__init__()
+        
+        self.long_term_model = LongTermModel(
+            num_news=num_news,
+            num_categories=num_categories,
+            news_dim=news_dim,
+            category_dim=category_dim
+        )
+        
+        embedding_dim = news_dim + category_dim
+        self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
+
+    def forward(self, long_term_sequence):
+        Z, delta_t = self.long_term_model(long_term_sequence)
+        encoded = self.ltc_encoder(Z, delta_t)
+        
+        return encoded, Z, delta_t
