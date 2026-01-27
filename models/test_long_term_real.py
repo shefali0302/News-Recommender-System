@@ -1,4 +1,4 @@
-from models.long_term import LongTermModel
+from models.long_term import LongTermModel, LongTermPipeline
 from preprocessing.long_term_preprocessing import prepare_long_term_input
 from preprocessing.sequence_builder import compute_time_gaps
 from preprocessing.dataset_ingestion import (
@@ -37,14 +37,33 @@ print("Sample user:", sample_user)
 print("Days:", len(long_term_sequence))
 
 # ---- Model ----
-model = LongTermModel(
-    num_news=len(news2idx) + 1,
-    num_categories=len(cat2idx) + 1
+# model = LongTermModel(
+#     num_news=len(news2idx) + 1,
+#     num_categories=len(cat2idx) + 1
+# )
+
+# Z, delta_t = model(long_term_sequence)
+
+# print("Z shape:", Z.shape)
+# print("delta_t shape:", delta_t.shape)
+# print("First daily vector (first 10 values):")
+# print(Z[0][:10])
+
+model = LongTermPipeline(
+    num_news=len(news2idx) + 1,        # safe upper bound
+    num_categories=len(cat2idx) + 1,
+    news_dim=64,
+    category_dim=16,
+    hidden_dim=64
 )
 
-Z, delta_t = model(long_term_sequence)
+encoded, Z, delta_t = model(long_term_sequence)
 
-print("Z shape:", Z.shape)
+print("\nZ shape:", Z.shape)
 print("delta_t shape:", delta_t.shape)
-print("First daily vector (first 10 values):")
+
+print("\nFirst daily vector (first 10 values):")
 print(Z[0][:10])
+
+print("\nEncoded output shape:", encoded.shape)
+print("Encoded output:", encoded)

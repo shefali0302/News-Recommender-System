@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from models.ltc_encoder import LTCEncoder
 from models.embeddings import JointEmbedding
 
 
@@ -75,3 +76,54 @@ class ShortTermModel(nn.Module):
         X = emb * mask                                     # (N, D)
 
         return X, delta_t
+
+
+class ShortTermPipeline(nn.Module):
+    """
+    Complete short-term preference pipeline:
+    - Embedding extraction
+    - LTC encoding
+    
+    Combines ShortTermModel and LTCEncoder in a single end-to-end module.
+    """
+    
+    def __init__(
+        self,
+        num_news: int,
+        num_categories: int,
+        news_dim: int = 64,
+        category_dim: int = 16,
+        hidden_dim: int = 64
+    ):
+        super().__init__()
+        
+        self.short_term_model = ShortTermModel(
+            num_news=num_news,
+            num_categories=num_categories,
+            news_dim=news_dim,
+            category_dim=category_dim
+        )
+        
+        embedding_dim = news_dim + category_dim
+        self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
+    
+    def forward(self, short_term_sequence):
+        """
+        Args:
+            short_term_sequence:[(news_idx, category_idx, delta_t, mask), ...]
+        
+        Returns:
+            encoded: LTC encoded user representation of shape (hidden_dim,)
+            X: Tensor of shape (N, D) - masked interaction embeddings (for inspection)
+            delta_t: Tensor of shape (N,) - time gaps (for inspection)
+        """
+        X, delta_t = self.short_term_model(short_term_sequence)
+        encoded = self.ltc_encoder(X, delta_t)
+        
+        return encoded, X, delta_t
+    
+    # def forward(self, short_term_sequence):
+    # X, delta_t = self.short_term_model(short_term_sequence)
+    # encoded = self.ltc_encoder(X, delta_t)
+    # return encoded, X, delta_t
+

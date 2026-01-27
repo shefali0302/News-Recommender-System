@@ -1,4 +1,4 @@
-from models.short_term import ShortTermModel
+from models.short_term import ShortTermPipeline
 from preprocessing.short_term_preprocessing import run_short_term_pipeline
 from preprocessing.utils import N, alpha
 
@@ -22,15 +22,21 @@ for x in short_term_sequence[:3]:
 # -----------------------------
 # Short-term model
 # -----------------------------
-model = ShortTermModel(
+model = ShortTermPipeline(
     num_news=50000,        # safe upper bound
-    num_categories=50
+    num_categories=50,
+    news_dim=64,
+    category_dim=16,
+    hidden_dim=64
 )
 
-X, delta_t = model(short_term_sequence)
+encoded, X, delta_t = model(short_term_sequence)
 
 print("\nX shape:", X.shape)
 print("delta_t shape:", delta_t.shape)
 
 print("\nFirst interaction embedding (first 10 values):")
 print(X[0][:10])
+
+print("\nEncoded output shape:", encoded.shape)
+print("Encoded output:", encoded)
