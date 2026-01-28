@@ -5,7 +5,7 @@ from models.embeddings import JointEmbedding
 from models.ltc_encoder import LTCEncoder
 
 
-class LongTermModel(nn.Module):
+class LongTermEmbeddings(nn.Module):
     """
     Long-term preference modeling (without LTC).
 
@@ -108,7 +108,7 @@ class LongTermPipeline(nn.Module):
     ):
         super().__init__()
         
-        self.long_term_model = LongTermModel(
+        self.long_term_embedding = LongTermEmbeddings(
             num_news=num_news,
             num_categories=num_categories,
             news_dim=news_dim,
@@ -119,7 +119,9 @@ class LongTermPipeline(nn.Module):
         self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
 
     def forward(self, long_term_sequence):
-        Z, delta_t = self.long_term_model(long_term_sequence)
+        Z, delta_t = self.long_term_embedding(long_term_sequence)
         encoded = self.ltc_encoder(Z, delta_t)
         
         return encoded, Z, delta_t
+
+
