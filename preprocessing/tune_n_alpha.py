@@ -1,9 +1,10 @@
-from sequence_builder import build_user_interaction_sequences
-from utils import get_last_n_interactions, compute_dominant_categories
 from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from preprocessing.sequence_builder import build_user_interaction_sequences
+from preprocessing.utils import get_last_n_interactions, compute_dominant_categories
+
 
 def analyze_N(user_interactions, N_values):
     results = {}
@@ -52,7 +53,7 @@ def analyze_alpha(user_interactions, N, alpha_values):
     return alpha_results
    
 if __name__ == "__main__":
-    user_sequences = build_user_interaction_sequences("../data/MINDsmall_train")
+    user_sequences = build_user_interaction_sequences()
 
     '''N_values = np.arange(5, 50, 5)
     N_results = analyze_N(user_sequences, N_values)

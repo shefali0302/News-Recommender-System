@@ -5,7 +5,7 @@ from models.embeddings import JointEmbedding
 from models.ltc_encoder import LTCEncoder
 
 
-class LongTermEmbeddings(nn.Module):
+class LongTermEmbedding(nn.Module):
     """
     Long-term preference modeling (without LTC).
 
@@ -89,7 +89,7 @@ class LongTermEmbeddings(nn.Module):
 
         return Z, delta_t
 
-class LongTermPipeline(nn.Module):
+class LongTermLTC(nn.Module):
     """
     Complete short-term preference pipeline:
     - Embedding extraction
@@ -108,7 +108,7 @@ class LongTermPipeline(nn.Module):
     ):
         super().__init__()
         
-        self.long_term_embedding = LongTermEmbeddings(
+        self.long_term_embedding = LongTermEmbedding(
             num_news=num_news,
             num_categories=num_categories,
             news_dim=news_dim,

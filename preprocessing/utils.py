@@ -4,8 +4,6 @@ from typing import Counter
 from collections import Counter
 import numpy as np
 
-N=10
-alpha=0.5
 
 #--------short term helper functions ---------
 
@@ -78,19 +76,19 @@ def apply_hybrid_mask(user_category_masked):
 #--------long term helper functions ---------
 from collections import defaultdict
 
-def chunk_interactions_by_day(user_interactions):
+def chunk_interactions_by_day(user_interactions_with_dt):
     """
     Group user interactions by calendar day.
 
     Args:
-        user_interactions (dict): user_id -> [(news_id, timestamp, category, delta_t), ...]
+        user_interactions_with_dt (dict): user_id -> [(news_id, timestamp, category, delta_t), ...]
 
     Returns:
         dict: user_id -> {date -> [(news_id, category, delta_t), ...]}
     """
     user_daily_chunks = {}
 
-    for user_id, interactions in user_interactions.items():
+    for user_id, interactions in user_interactions_with_dt.items():
         daily_chunks = defaultdict(list)
 
         for news_id, timestamp, category, delta_t in interactions:

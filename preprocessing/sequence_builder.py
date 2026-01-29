@@ -5,9 +5,14 @@ Builds user interaction sequences with time gaps.
 
 import os
 from preprocessing.dataset_ingestion import (
+    build_id_mappings,
     load_news_categories,
     load_user_interactions,
-    sort_user_interactions
+    map_interactions_to_indices,
+    sort_user_interactions,
+    BASE_DIR,
+    NEWS_PATH,
+    BEHAVIORS_PATH
 )
 
 
@@ -44,25 +49,28 @@ def compute_time_gaps(user_interactions):
     return user_interactions_with_dt
 
 
-def build_user_interaction_sequences(data_dir):
+def build_user_interaction_sequences():
     """
-    Args:
-        data_dir (str): path to MIND dataset directory
 
     Returns:
         dict:
             user_id -> [(news_id, timestamp, category, delta_t),...]
     """
 
-    news_path = os.path.join(data_dir, "news.tsv")
-    behaviors_path = os.path.join(data_dir, "behaviors.tsv")
+    print("\n========== SEQUENCE CONSTRUCTION START ==========\n")
 
-    news_category_map = load_news_categories(news_path)
+    news_category_map = load_news_categories(NEWS_PATH)
 
-    user_interactions = load_user_interactions(behaviors_path, news_category_map)
+    user_interactions = load_user_interactions(BEHAVIORS_PATH, news_category_map)
+    
+    news2idx, cat2idx = build_id_mappings(user_interactions)
+
+    user_interactions = map_interactions_to_indices(user_interactions, news2idx, cat2idx)
 
     user_interactions = sort_user_interactions(user_interactions)
 
     user_interactions_with_dt = compute_time_gaps(user_interactions)
 
-    return user_interactions_with_dt
+    print("\n========== SEQUENCE CONSTRUCTION END ==========\n")
+
+    return user_interactions_with_dt, news2idx, cat2idx
