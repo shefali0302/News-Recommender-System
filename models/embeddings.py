@@ -54,6 +54,9 @@ class CategoryEmbedding(nn.Module):
         Output:
             category_embeddings: (batch_size, seq_len, embedding_dim)
         """
+        # print("Max category id:", category_ids.max().item())
+        # print("Min category id:", category_ids.min().item())
+
         return self.embedding(category_ids)
 
 

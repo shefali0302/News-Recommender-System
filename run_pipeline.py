@@ -1,6 +1,10 @@
 from preprocessing.run_preprocessing_pipeline import run_preprocessing_pipeline
 from models.short_term import ShortTermLTC
 from models.long_term import LongTermLTC
+from models.fusion import FusionGate
+from models.scoring import ItemScorer
+import torch
+
 
 def main():
     short_term_data, long_term_data, news2idx, category2idx = run_preprocessing_pipeline()
@@ -30,6 +34,14 @@ def main():
 
     print("ST vector shape:", st_vec.shape)
     print("LT vector shape:", lt_vec.shape)
+
+    fusion_gate = FusionGate(dim=64)
+
+    fused_user_vec, gate_value = fusion_gate(st_vec, lt_vec)
+
+    print("Fused user vector shape:", fused_user_vec.shape)
+    print("Gate value:", gate_value.item())
+
 
 if __name__ == "__main__":
     main()
