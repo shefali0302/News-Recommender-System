@@ -18,6 +18,7 @@ NewsRecommenderSystem/
 │ ├── ltc_encoder.py  
 │ ├── short_term.py  
 │ └── long_term.py  
+│ └── fusion.py    
 ├── run_pipeline.py                `# End-to-end pipeline runner`   
 └── README.md  
 
@@ -49,6 +50,7 @@ Construct user interaction sequences (once)
 Perform short-term and long-term preprocessing  
 Generate user representations using LTC networks  
 Successful execution prints the generated embedding shapes for verification  
+Fuse user representations using a dynamic gating mechanism  
 
 
 
