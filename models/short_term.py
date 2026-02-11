@@ -1,3 +1,9 @@
+# --------------------------------------------------------------------------------------------
+# This file defines the short-term preference modeling components, including:
+# - ShortTermEmbedding: extracts masked interaction embeddings from recent interactions
+# - ShortTermLTC: combines the embedding extraction with the LTC encoder for temporal modeling
+# --------------------------------------------------------------------------------------------
+
 import torch
 import torch.nn as nn
 

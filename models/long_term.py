@@ -1,3 +1,9 @@
+# -------------------------------------------------------------------------------------------
+# This file defines the long-term preference modeling components, including:
+# - LongTermEmbedding: extracts daily preference vectors from long-term interaction history
+# - LongTermLTC: combines the embedding extraction with the LTC encoder for temporal modeling
+# -------------------------------------------------------------------------------------------
+
 import torch
 import torch.nn as nn
 

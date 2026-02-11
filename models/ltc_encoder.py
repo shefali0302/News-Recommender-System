@@ -1,3 +1,9 @@
+# ----------------------------------------------------------------------------------------------
+# This file defines the LTCEncoder, which is a wrapper around the LTC module from ncps.torch.
+# It takes in the embedded interaction sequences and their corresponding time gaps, and produces 
+# a fixed-size user representation that captures temporal dynamics.
+# -----------------------------------------------------------------------------------------------
+
 import torch
 import torch.nn as nn
 from ncps.torch import LTC

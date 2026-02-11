@@ -1,3 +1,8 @@
+# --------------------------------------------------------------------------------------
+# This file defines the function to get the top-k recommended news items based on the
+# scores produced by the scoring component.
+# --------------------------------------------------------------------------------------
+
 import torch
 
 def get_top_k_news(scores, candidate_ids, k=5):

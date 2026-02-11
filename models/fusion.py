@@ -1,3 +1,9 @@
+# --------------------------------------------------------------------------------------
+# This file defines the FusionGate module, which is responsible for dynamically fusing
+# the short-term and long-term user representations. It uses a learnable gating mechanism
+# to determine how much weight to give to each representation based on the current input.
+# --------------------------------------------------------------------------------------
+
 import torch
 import torch.nn as nn
 

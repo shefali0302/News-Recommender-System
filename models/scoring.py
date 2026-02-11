@@ -1,3 +1,9 @@
+# ----------------------------------------------------------------------------------
+# This file defines the scoring component of the recommendation system, which takes 
+# the fused user representation and candidate news items to produce relevance scores 
+# and probabilities.
+# ----------------------------------------------------------------------------------
+
 import torch
 import torch.nn as nn
 import torch
