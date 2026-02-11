@@ -7,6 +7,10 @@ Shared across:
 - long-term modeling
 """
 
+# This file defines the embedding layers for news articles and categories, as well as 
+# a joint embedding that combines both. These embeddings are shared across the short-term 
+# and long-term modeling components of the recommendation system.
+
 import torch
 import torch.nn as nn
 
