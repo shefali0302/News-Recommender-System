@@ -1,11 +1,12 @@
 import torch
 import random
+import path_variables as pv
 from sklearn.model_selection import train_test_split
 
 def split_preprocessed_pt(
-    input_path="C:\\Users\\shefa\\OneDrive\\Desktop\\FY project\\News Reccomender system\\data\\preprocessed_data.pt",
-    train_out="C:\\Users\\shefa\\OneDrive\\Desktop\\FY project\\News Reccomender system\\data\\train.pt",
-    val_out="C:\\Users\\shefa\\OneDrive\\Desktop\\FY project\\News Reccomender system\\data\\val.pt",
+    input_path=pv.MINDS_PREPROCESSED_TRAIN,
+    train_out=pv.MINDS_PREPROCESSED_TRAIN_TRAIN,
+    val_out=pv.MINDS_PREPROCESSED_TRAIN_VAL,
     val_ratio=0.2,
     seed=42
 ):
