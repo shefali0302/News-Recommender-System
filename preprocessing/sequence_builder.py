@@ -10,7 +10,6 @@ from preprocessing.dataset_ingestion import (
     load_user_interactions,
     map_interactions_to_indices,
     sort_user_interactions,
-    BASE_DIR,
     NEWS_PATH,
     BEHAVIORS_PATH
 )
