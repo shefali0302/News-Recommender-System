@@ -48,25 +48,30 @@ class ShortTermEmbedding(nn.Module):
             X: Tensor of shape (N, D)   -> masked interaction embeddings
             delta_t: Tensor of shape (N,) -> time gaps between interactions
         """
+        device = next(self.parameters()).device
 
         news_ids = torch.tensor(
             [x[0] for x in short_term_sequence],
-            dtype=torch.long
-        ).unsqueeze(0)  # (1, N)
+            dtype=torch.long,
+            device=device
+        ).unsqueeze(0) # (1, N)
 
         category_ids = torch.tensor(
             [x[1] for x in short_term_sequence],
-            dtype=torch.long
+            dtype=torch.long,
+            device=device
         ).unsqueeze(0)  # (1, N)
 
         delta_t = torch.tensor(
             [x[2] for x in short_term_sequence],
-            dtype=torch.float32
+            dtype=torch.float32,
+            device=device
         )  # (N,)
 
         mask = torch.tensor(
             [x[3] for x in short_term_sequence],
-            dtype=torch.float32
+            dtype=torch.float32,
+            device=device
         ).unsqueeze(-1)  # (N, 1)
 
         # Embedding lookup
