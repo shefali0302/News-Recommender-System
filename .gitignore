@@ -8,3 +8,12 @@ artifacts/
 
 # VS Code temp files
 tempCodeRunnerFile.py
+
+data/MINDsmall_train
+data/MINDsmall_dev
+data/MINDlarge_train 
+data/MINDlarge_dev 
+data/MINDlarge_test
+data/MINDsmall_train_preprocessed_train.pt
+data/MINDsmall_train_preprocessed_val.pt 
+data/MINDsmall_train_preprocessed.pt

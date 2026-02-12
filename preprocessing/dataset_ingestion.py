@@ -4,19 +4,14 @@ This module parses the MIND dataset and converts raw behavior logs into time-ord
 
 import os
 import pandas as pd
+import path_variables as pv
 from collections import defaultdict
 from datetime import datetime
 from tqdm import tqdm
 #from sequence_builder import compute_time_gaps, sort_user_interactions
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-NEWS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "news.tsv"
-    )
-BEHAVIORS_PATH = os.path.join(
-        BASE_DIR, "..", "data", "MINDsmall_train", "behaviors.tsv"
-    )
+NEWS_PATH = pv.MINDS_TRAIN_NEWS
+BEHAVIORS_PATH = pv.MINDS_TRAIN_BEHAVIORS
 
 def load_news_categories(news_path):
     """
