@@ -1,3 +1,4 @@
+import torch
 from preprocessing.sequence_builder import build_user_interaction_sequences
 from preprocessing.short_term_preprocessing import run_short_term_preprocessing
 from preprocessing.long_term_preprocessing import run_long_term_preprocessing
@@ -16,3 +17,13 @@ def run_preprocessing_pipeline():
 
 
     return short_term_data, long_term_data, news2idx, category2idx
+
+
+if __name__ == "__main__":
+    short_term_data, long_term_data, news2idx, category2idx = run_preprocessing_pipeline()
+    torch.save({
+        "short_term_data": short_term_data,
+        "long_term_data": long_term_data,
+        "news2idx": news2idx,
+        "category2idx": category2idx
+    }, "preprocessed_data.pt")

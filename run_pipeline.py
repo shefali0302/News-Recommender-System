@@ -1,3 +1,9 @@
+# ----------------------------------------------------------------------
+# This is just a test script to run the entire pipeline and 
+# check if all components are working together correctly.
+# THIS IS ONLY FOR TESTING PURPOSES AND NOT THE FINAL TRAINING SCRIPT.
+# -----------------------------------------------------------------------
+
 from preprocessing.run_preprocessing_pipeline import run_preprocessing_pipeline
 from models.short_term import ShortTermLTC
 from models.long_term import LongTermLTC
