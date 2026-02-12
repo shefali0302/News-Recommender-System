@@ -20,8 +20,9 @@ class ItemScorer(nn.Module):
         user_vec: (D,)
         candidate_news_ids: list[int]
         """
+        device = next(self.parameters()).device
 
-        candidate_ids = torch.tensor(candidate_news_ids)
+        candidate_ids = torch.tensor(candidate_news_ids, dtype=torch.long, device=device)  # (M,)
         news_vecs = self.news_embedding(candidate_ids)   # (M, D)
 
         scores = torch.matmul(news_vecs, user_vec)       # (M,)

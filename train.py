@@ -11,14 +11,16 @@ from models.long_term import LongTermLTC
 from models.fusion import FusionGate
 from models.scoring import ItemScorer
 from training.loss import compute_loss
-from inference.top_k_recs import get_top_k_news
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
 
 
 MODE = "full"
 # options: "full", "short_only", "long_only", "no_gate"
 
-MAX_USERS=100
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
 
 def load_data(path):
     return torch.load(path)
@@ -99,10 +101,10 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
 
-    short_model = ShortTermLTC(num_news, num_categories, hidden_dim=64)
-    long_model  = LongTermLTC(num_news, num_categories, hidden_dim=64)
-    fusion_gate = FusionGate(dim=64)
-    scorer      = ItemScorer(num_news=num_news, embedding_dim=64)
+    short_model = ShortTermLTC(num_news, num_categories, hidden_dim=64).to(device)
+    long_model  = LongTermLTC(num_news, num_categories, hidden_dim=64).to(device)
+    fusion_gate = FusionGate(dim=64).to(device)
+    scorer      = ItemScorer(num_news=num_news, embedding_dim=64).to(device)
 
     optimizer = optim.Adam(
         list(short_model.parameters()) +
@@ -161,6 +163,10 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
 
             total_loss += loss.item()
 
+            if i % 100 == 0:
+                print(f"Epoch {epoch+1} Iter {i} Loss = {loss.item():.4f}")
+                print(f"Processed {i} users...")
+
         print(f"Epoch {epoch+1} Loss = {total_loss:.4f}")
 
         val_metrics = evaluate_model(
@@ -199,7 +205,7 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
 
     print("Training complete")
     print(f"Loading best model from epoch {best_epoch}")
-    checkpoint = torch.load("best_model.pt")
+    checkpoint = torch.load("best_model.pt", map_location=device)
     short_model.load_state_dict(checkpoint["short_model"])
     long_model.load_state_dict(checkpoint["long_model"])
     fusion_gate.load_state_dict(checkpoint["fusion_gate"])
@@ -229,7 +235,7 @@ if __name__ == "__main__":
         train_short, train_long,
         dev_short, dev_long,
         news2idx, category2idx,
-        num_epochs=20
+        num_epochs=2
     )
 
     print("\nFinal Evaluation on Dev Set")

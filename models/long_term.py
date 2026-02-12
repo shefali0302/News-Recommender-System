@@ -51,6 +51,7 @@ class LongTermEmbedding(nn.Module):
             Z: Tensor of shape (M, D)   -> daily preference vectors
             delta_t: Tensor of shape (M,) -> time gap between days
         """
+        device = next(self.parameters()).device
 
         daily_vectors = []
         day_gaps = []
@@ -62,12 +63,14 @@ class LongTermEmbedding(nn.Module):
             # -------------------------------
             news_ids = torch.tensor(
                 [x[0] for x in daily_interactions],
-                dtype=torch.long
+                dtype=torch.long,
+                device=device
             ).unsqueeze(0)  # (1, N_m)
 
             category_ids = torch.tensor(
                 [x[1] for x in daily_interactions],
-                dtype=torch.long
+                dtype=torch.long,
+                device=device
             ).unsqueeze(0)  # (1, N_m)
 
             # -------------------------------
@@ -91,7 +94,7 @@ class LongTermEmbedding(nn.Module):
         # Build daily sequence
         # -------------------------------
         Z = torch.stack(daily_vectors, dim=0)                   # (M, D)
-        delta_t = torch.tensor(day_gaps, dtype=torch.float32)   # (M,)
+        delta_t = torch.tensor(day_gaps, dtype=torch.float32, device=device)   # (M,)
 
         return Z, delta_t
 
