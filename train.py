@@ -3,7 +3,6 @@
 # It loads the preprocessed data, initializes the models, and runs the training loop.
 # After training, it also runs a simple evaluation to check the performance of the model.
 # ----------------------------------------------------------------------
-from logging import config
 import os
 import torch
 import torch.optim as optim
@@ -242,6 +241,18 @@ if __name__ == "__main__":
 
     dev_short = dev_data["short_term_data"]
     dev_long = dev_data["long_term_data"]
+
+    config = {
+        "embedding_dim": 64,
+        "hidden_dim": 64,
+        "learning_rate": 0.001,
+        "num_epochs": 5,
+        "mode": MODE,
+        "optimizer": "Adam",
+        "batch_size": BATCH_SIZE,
+        "device": str(device),
+        "dataset": "MINDsmall"
+    }
 
     exp_dir = create_experiment_folder(config)
     
