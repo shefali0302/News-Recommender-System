@@ -81,6 +81,8 @@ class JointEmbedding(nn.Module):
         category_dim: int = 16
     ):
         super().__init__()
+        self.news_dim = news_dim
+        self.category_dim = category_dim
 
         self.news_embedding = NewsEmbedding(num_news, news_dim)
         self.category_embedding = CategoryEmbedding(num_categories, category_dim)
@@ -92,6 +94,7 @@ class JointEmbedding(nn.Module):
         news_ids: torch.Tensor,
         category_ids: torch.Tensor
     ) -> torch.Tensor:
+        
         """
         Input:
             news_ids: (batch_size, seq_len)
