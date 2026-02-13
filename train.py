@@ -107,7 +107,6 @@ def train_model(train_short, train_long,
     scorer = ItemScorer(joint_embedding).to(device)
 
     optimizer = optim.Adam(
-        list(joint_embedding.parameters()) +
         list(short_model.parameters()) +
         list(long_model.parameters()) +
         list(fusion_gate.parameters()) +
