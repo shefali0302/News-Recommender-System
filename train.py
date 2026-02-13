@@ -155,8 +155,9 @@ def train_model(train_short, train_long,
                 st_vec, _, _ = short_model(short_seq)
                 lt_vec, _, _ = long_model(long_seq)
 
-                batch_st.append(st_vec)
-                batch_lt.append(lt_vec)
+                batch_st.append(st_vec.squeeze(0))
+                batch_lt.append(lt_vec.squeeze(0))
+
                 batch_candidates.append(candidates)
                 batch_targets.append(clicked_index)
 
