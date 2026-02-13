@@ -18,6 +18,7 @@ from training.experiment_util import create_experiment_folder
 
 
 MODE = "full"
+BATCH_SIZE = 32
 # options: "full", "short_only", "long_only", "no_gate"
 
 
@@ -31,7 +32,7 @@ def load_data(path):
 
 def evaluate_model(short_model, long_model, fusion_gate, scorer,
                    short_term_data, long_term_data, MODE):
-    
+
     short_model.eval()
     long_model.eval()
     fusion_gate.eval()
@@ -41,9 +42,10 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
     ndcg5_list = []
     ndcg10_list = []
     auc_list = []
+
     with torch.no_grad():
 
-        for i, user_id in enumerate(short_term_data):
+        for user_id in short_term_data:
 
             if user_id not in long_term_data:
                 continue
@@ -60,28 +62,25 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             st_vec, _, _ = short_model(short_seq)
             lt_vec, _, _ = long_model(long_seq)
 
-            # ---- ablation switch ----
             if MODE == "short_only":
                 user_vec = st_vec
             elif MODE == "long_only":
                 user_vec = lt_vec
             elif MODE == "no_gate":
                 user_vec = 0.5 * (st_vec + lt_vec)
-            else:  # full model
-                user_vec, _ = fusion_gate(st_vec, lt_vec)
+            else:
+                user_vec, _ = fusion_gate(st_vec.unsqueeze(0),
+                                          lt_vec.unsqueeze(0))
+                user_vec = user_vec.squeeze(0)
 
-            scores, _ = scorer(user_vec, candidates)
+            scores, _ = scorer(user_vec.unsqueeze(0), [candidates])
+            scores = scores.squeeze(0)
 
-            # ---- ranking ----
             sorted_indices = torch.argsort(scores, descending=True)
             rank_pos = (sorted_indices == clicked_index).nonzero(as_tuple=True)
 
-            if len(rank_pos[0]) == 0:
-                rank = None
-            else:
-                rank = rank_pos[0].item() + 1  # 1-based rank
+            rank = rank_pos[0].item() + 1 if len(rank_pos[0]) > 0 else None
 
-            # ---- metrics ----
             mrr_list.append(compute_mrr(rank))
             ndcg5_list.append(compute_ndcg(rank, 5))
             ndcg10_list.append(compute_ndcg(rank, 10))
@@ -94,13 +93,10 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
         "AUC": sum(auc_list) / max(1, len(auc_list))
     }
 
-
-def train_model(train_short, train_long, val_short, val_long, news2idx, category2idx, num_epochs):
-    best_score = 0
-    best_epoch = 0
-    patience = 3
-    no_improve = 0
-    
+def train_model(train_short, train_long,
+                val_short, val_long,
+                news2idx, category2idx,
+                num_epochs):
 
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
@@ -110,7 +106,6 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
     long_model = LongTermLTC(joint_embedding, hidden_dim=64).to(device)
     fusion_gate = FusionGate(dim=64).to(device)
     scorer = ItemScorer(joint_embedding).to(device)
-    
 
     optimizer = optim.Adam(
         list(joint_embedding.parameters()) +
@@ -121,19 +116,14 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
         lr=0.001
     )
 
-    config = {
-        "embedding_dim": 64,
-        "hidden_dim": 64,
-        "learning_rate": 0.001,
-        "num_epochs": num_epochs,
-        "mode": MODE,
-        "optimizer": "Adam",
-        "device": str(device),
-        "dataset": "MINDsmall"
-    }
+    best_score = 0
+    patience = 3
+    no_improve = 0
 
+    user_ids = list(train_short.keys())
 
     for epoch in range(num_epochs):
+
         short_model.train()
         long_model.train()
         fusion_gate.train()
@@ -141,71 +131,80 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
 
         total_loss = 0
 
-        for i, user_id in enumerate(train_short):
+        for batch_start in range(0, len(user_ids), BATCH_SIZE):
 
-            if user_id not in train_long:
+            batch_users = user_ids[batch_start: batch_start + BATCH_SIZE]
+
+            batch_st = []
+            batch_lt = []
+            batch_candidates = []
+            batch_targets = []
+
+            for user_id in batch_users:
+
+                if user_id not in train_long:
+                    continue
+
+                short_seq = train_short[user_id]
+                long_seq = train_long[user_id]
+
+                if len(short_seq) < 2:
+                    continue
+
+                candidates = [x[0] for x in short_seq]
+                clicked_index = len(candidates) - 1
+
+                st_vec, _, _ = short_model(short_seq)
+                lt_vec, _, _ = long_model(long_seq)
+
+                batch_st.append(st_vec)
+                batch_lt.append(lt_vec)
+                batch_candidates.append(candidates)
+                batch_targets.append(clicked_index)
+
+            if len(batch_st) == 0:
                 continue
 
-            short_seq = train_short[user_id]
-            long_seq  = train_long[user_id]
-
-            if len(short_seq) < 2:
-                continue
-
-            # candidates = news in short-term window
-            candidates = [x[0] for x in short_seq]
-
-            # target = last clicked item
-            clicked_index = len(candidates) - 1
-
-            st_vec, _, _ = short_model(short_seq)
-            lt_vec, _, _ = long_model(long_seq)
+            batch_st = torch.stack(batch_st)  # (B, D)
+            batch_lt = torch.stack(batch_lt)  # (B, D)
 
             if MODE == "short_only":
-                user_vec = st_vec
+                user_vec = batch_st
             elif MODE == "long_only":
-                user_vec = lt_vec
+                user_vec = batch_lt
             elif MODE == "no_gate":
-                user_vec = 0.5 * (st_vec + lt_vec)
-            else:  
-                user_vec, _ = fusion_gate(st_vec, lt_vec)
+                user_vec = 0.5 * (batch_st + batch_lt)
+            else:
+                user_vec, _ = fusion_gate(batch_st, batch_lt)
 
+            scores, _ = scorer(user_vec, batch_candidates)
 
-            scores, probs = scorer(user_vec, candidates)
+            loss = 0
+            for i in range(len(batch_targets)):
+                loss += compute_loss(scores[i], batch_targets[i])
 
-            loss = compute_loss(scores, clicked_index)
+            loss = loss / len(batch_targets)
 
-            #backpropagation
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             total_loss += loss.item()
-            
-            print(joint_embedding.news_embedding.weight.grad is None)
 
-            if i % 100 == 0:
-                print(f"Epoch {epoch+1} Iter {i} Loss = {loss.item():.4f}")
-                print(f"Processed {i} users...")
-
-        print(f"Epoch {epoch+1} Loss = {total_loss:.4f}")
+        print(f"Epoch {epoch+1} Loss: {total_loss:.4f}")
 
         val_metrics = evaluate_model(
-            short_model,
-            long_model,
-            fusion_gate,
-            scorer,
-            val_short,
-            val_long,
-            MODE
+            short_model, long_model,
+            fusion_gate, scorer,
+            val_short, val_long, MODE
         )
 
+        print("Validation:", val_metrics)
+
         current_score = val_metrics["NDCG@10"]
-        print(f"Validation NDCG@10: {current_score:.4f}")
 
         if current_score > best_score:
             best_score = current_score
-            best_epoch = epoch + 1
             no_improve = 0
 
             torch.save({
@@ -214,10 +213,9 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
                 "long_model": long_model.state_dict(),
                 "fusion_gate": fusion_gate.state_dict(),
                 "scorer": scorer.state_dict()
-            }, os.path.join(exp_dir, "best_model.pt"))
+            }, "best_model.pt")
 
-
-            print(f"New best model saved at epoch {best_epoch}")
+            print("New best model saved.")
         else:
             no_improve += 1
 
@@ -225,21 +223,9 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
             print("Early stopping triggered.")
             break
 
-
     print("Training complete")
-    print(f"Loading best model from epoch {best_epoch}")
-    checkpoint = torch.load("best_model.pt", map_location=device)
-
-    joint_embedding.load_state_dict(checkpoint["joint_embedding"])
-    short_model.load_state_dict(checkpoint["short_model"])
-    long_model.load_state_dict(checkpoint["long_model"])
-    fusion_gate.load_state_dict(checkpoint["fusion_gate"])
-    scorer.load_state_dict(checkpoint["scorer"])
-
 
     return short_model, long_model, fusion_gate, scorer
-
-
 
 if __name__ == "__main__":
 
@@ -263,7 +249,7 @@ if __name__ == "__main__":
         train_short, train_long,
         dev_short, dev_long,
         news2idx, category2idx,
-        num_epochs=2
+        num_epochs=5
     )
 
     print("\nFinal Evaluation on Dev Set")
@@ -281,4 +267,3 @@ if __name__ == "__main__":
     with open(os.path.join(exp_dir, "final_metrics.txt"), "w") as f:
         for k, v in test_metrics.items():
             f.write(f"{k}: {v:.4f}\n")
-

@@ -15,17 +15,20 @@ class ItemScorer(nn.Module):
         self.news_embedding = joint_embedding.news_embedding
 
     def forward(self, user_vec, candidate_news_ids):
-        """
-        user_vec: (D,)
-        candidate_news_ids: list[int]
-        """
         device = user_vec.device
 
-        candidate_ids = torch.tensor(candidate_news_ids, dtype=torch.long, device=device)  # (M,)
-        news_vecs = self.news_embedding(candidate_ids)   # (M, D)
+        candidate_ids = torch.tensor(
+            candidate_news_ids,
+            dtype=torch.long,
+            device=device
+        )  # (B, M)
 
-        scores = torch.matmul(news_vecs, user_vec)       # (M,)
+        news_vecs = self.news_embedding(candidate_ids)  # (B, M, D)
 
-        probs = torch.softmax(scores, dim=0)
+        # batch matrix multiply
+        scores = torch.bmm(news_vecs, user_vec.unsqueeze(-1)).squeeze(-1)  # (B, M)
+
+        probs = torch.softmax(scores, dim=1)
 
         return scores, probs
+

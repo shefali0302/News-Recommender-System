@@ -66,7 +66,7 @@ class LTCEncoder(nn.Module):
 
         _, h_final = self.ltc(X_aug, h0)
 
-        return h_final.squeeze(0)
+        return h_final
 
     # -------------------------
     # Parameter Debug Tools
