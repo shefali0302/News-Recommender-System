@@ -3,7 +3,8 @@
 # It loads the preprocessed data, initializes the models, and runs the training loop.
 # After training, it also runs a simple evaluation to check the performance of the model.
 # ----------------------------------------------------------------------
-
+from logging import config
+import os
 import torch
 import torch.optim as optim
 from models.scoring import ItemScorer
@@ -13,6 +14,7 @@ from models.fusion import FusionGate
 from models.embeddings import JointEmbedding
 from training.loss import compute_loss
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
+from training.experiment_util import create_experiment_folder
 
 
 MODE = "full"
@@ -92,6 +94,7 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
         "AUC": sum(auc_list) / max(1, len(auc_list))
     }
 
+
 def train_model(train_short, train_long, val_short, val_long, news2idx, category2idx, num_epochs):
     best_score = 0
     best_epoch = 0
@@ -117,6 +120,18 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
         list(scorer.parameters()),
         lr=0.001
     )
+
+    config = {
+        "embedding_dim": 64,
+        "hidden_dim": 64,
+        "learning_rate": 0.001,
+        "num_epochs": num_epochs,
+        "mode": MODE,
+        "optimizer": "Adam",
+        "device": str(device),
+        "dataset": "MINDsmall"
+    }
+
 
     for epoch in range(num_epochs):
         short_model.train()
@@ -199,7 +214,7 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
                 "long_model": long_model.state_dict(),
                 "fusion_gate": fusion_gate.state_dict(),
                 "scorer": scorer.state_dict()
-            }, "best_model.pt")
+            }, os.path.join(exp_dir, "best_model.pt"))
 
 
             print(f"New best model saved at epoch {best_epoch}")
@@ -242,6 +257,8 @@ if __name__ == "__main__":
     dev_short = dev_data["short_term_data"]
     dev_long = dev_data["long_term_data"]
 
+    exp_dir = create_experiment_folder(config)
+    
     short_model, long_model, fusion_gate, scorer = train_model(
         train_short, train_long,
         dev_short, dev_long,
@@ -261,5 +278,7 @@ if __name__ == "__main__":
         MODE
     )
 
-    for k, v in test_metrics.items():
-        print(f"{k}: {v:.4f}")
+    with open(os.path.join(exp_dir, "final_metrics.txt"), "w") as f:
+        for k, v in test_metrics.items():
+            f.write(f"{k}: {v:.4f}\n")
+
