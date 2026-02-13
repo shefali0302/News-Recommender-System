@@ -121,15 +121,20 @@ def train_model(train_short, train_long,
     user_ids = list(train_short.keys())
 
     for epoch in range(num_epochs):
-
+        print("epoch: ", epoch+1)
+        print("short term model training")
         short_model.train()
+        print("long term model training")
         long_model.train()
+        print("fusion gate training")
         fusion_gate.train()
+        print("item scorer training")    
         scorer.train()
 
         total_loss = 0
 
         for batch_start in range(0, len(user_ids), BATCH_SIZE):
+            print("starting batch: ", batch_start)
 
             batch_users = user_ids[batch_start: batch_start + BATCH_SIZE]
 
