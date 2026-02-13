@@ -191,7 +191,7 @@ def train_model(train_short, train_long,
 
             total_loss += loss.item()
 
-        print(f"Epoch {epoch+1} Loss: {total_loss:.4f}")
+        print("Epoch {} Loss: {:.4f}".format(epoch+1, total_loss))
 
         val_metrics = evaluate_model(
             short_model, long_model,
@@ -266,4 +266,4 @@ if __name__ == "__main__":
 
     with open(os.path.join(exp_dir, "final_metrics.txt"), "w") as f:
         for k, v in test_metrics.items():
-            f.write(f"{k}: {v:.4f}\n")
+            f.write("{}: {:.4f}\n".format(k, v))
