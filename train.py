@@ -6,10 +6,11 @@
 
 import torch
 import torch.optim as optim
+from models.scoring import ItemScorer
 from models.short_term import ShortTermLTC
 from models.long_term import LongTermLTC
 from models.fusion import FusionGate
-from models.scoring import ItemScorer
+from models.embeddings import JointEmbedding
 from training.loss import compute_loss
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
 
@@ -101,12 +102,15 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
 
-    short_model = ShortTermLTC(num_news, num_categories, hidden_dim=64).to(device)
-    long_model  = LongTermLTC(num_news, num_categories, hidden_dim=64).to(device)
+    joint_embedding = JointEmbedding(num_news, num_categories, 64).to(device)
+    short_model = ShortTermLTC(joint_embedding, hidden_dim=64).to(device)
+    long_model = LongTermLTC(joint_embedding, hidden_dim=64).to(device)
     fusion_gate = FusionGate(dim=64).to(device)
-    scorer      = ItemScorer(num_news=num_news, embedding_dim=64).to(device)
+    scorer = ItemScorer(joint_embedding).to(device)
+    
 
     optimizer = optim.Adam(
+        list(joint_embedding.parameters()) +
         list(short_model.parameters()) +
         list(long_model.parameters()) +
         list(fusion_gate.parameters()) +
@@ -162,6 +166,8 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
             optimizer.step()
 
             total_loss += loss.item()
+            
+            print(joint_embedding.news_embedding.weight.grad is None)
 
             if i % 100 == 0:
                 print(f"Epoch {epoch+1} Iter {i} Loss = {loss.item():.4f}")
@@ -188,11 +194,13 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
             no_improve = 0
 
             torch.save({
+                "joint_embedding": joint_embedding.state_dict(),
                 "short_model": short_model.state_dict(),
                 "long_model": long_model.state_dict(),
                 "fusion_gate": fusion_gate.state_dict(),
                 "scorer": scorer.state_dict()
             }, "best_model.pt")
+
 
             print(f"New best model saved at epoch {best_epoch}")
         else:
@@ -206,10 +214,13 @@ def train_model(train_short, train_long, val_short, val_long, news2idx, category
     print("Training complete")
     print(f"Loading best model from epoch {best_epoch}")
     checkpoint = torch.load("best_model.pt", map_location=device)
+
+    joint_embedding.load_state_dict(checkpoint["joint_embedding"])
     short_model.load_state_dict(checkpoint["short_model"])
     long_model.load_state_dict(checkpoint["long_model"])
     fusion_gate.load_state_dict(checkpoint["fusion_gate"])
     scorer.load_state_dict(checkpoint["scorer"])
+
 
     return short_model, long_model, fusion_gate, scorer
 

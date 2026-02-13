@@ -22,24 +22,12 @@ class ShortTermEmbedding(nn.Module):
     - Return (X, delta_t) for LTC
     """
 
-    def __init__(
-        self,
-        num_news: int,
-        num_categories: int,
-        news_dim: int = 64,
-        category_dim: int = 16
-    ):
+    def __init__(self, joint_embedding):
         super().__init__()
+        self.embedding_layer = joint_embedding
+        self.output_dim = joint_embedding.news_dim + joint_embedding.category_dim
 
-        self.embedding_layer = JointEmbedding(
-            num_news=num_news,
-            num_categories=num_categories,
-            news_dim=news_dim,
-            category_dim=category_dim
-        )
-
-        self.output_dim = news_dim + category_dim
-
+    
     def forward(self, short_term_sequence):
         """
         Args:
@@ -93,25 +81,14 @@ class ShortTermLTC(nn.Module):
     Combines ShortTermModel and LTCEncoder in a single end-to-end module.
     """
     
-    def __init__(
-        self,
-        num_news: int,
-        num_categories: int,
-        news_dim: int = 64,
-        category_dim: int = 16,
-        hidden_dim: int = 64
-    ):
+    def __init__(self, joint_embedding, hidden_dim: int = 64):
         super().__init__()
-        
-        self.short_term_embedding = ShortTermEmbedding(
-            num_news=num_news,
-            num_categories=num_categories,
-            news_dim=news_dim,
-            category_dim=category_dim
-        )
-        
-        embedding_dim = news_dim + category_dim
+
+        self.short_term_embedding = ShortTermEmbedding(joint_embedding)
+
+        embedding_dim = joint_embedding.news_dim + joint_embedding.category_dim
         self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
+
     
     def forward(self, short_term_sequence):
         """

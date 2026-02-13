@@ -21,26 +21,12 @@ class LongTermEmbedding(nn.Module):
     - Build daily preference sequence Z
     - Return (Z, delta_t_days) for LTC
     """
-
-    def __init__(
-        self,
-        num_news: int,
-        num_categories: int,
-        news_dim: int = 64,
-        category_dim: int = 16
-    ):
+    def __init__(self, joint_embedding):
         super().__init__()
+        self.embedding_layer = joint_embedding
+        self.output_dim = joint_embedding.news_dim + joint_embedding.category_dim
 
-        # Shared embedding layer (news + category)
-        self.embedding_layer = JointEmbedding(
-            num_news=num_news,
-            num_categories=num_categories,
-            news_dim=news_dim,
-            category_dim=category_dim
-        )
 
-        # Useful later for LTC / fusion
-        self.output_dim = news_dim + category_dim
 
     def forward(self, long_term_sequence):
         """
@@ -107,25 +93,14 @@ class LongTermLTC(nn.Module):
     Combines ShortTermModel and LTCEncoder in a single end-to-end module.
     """
     
-    def __init__(
-        self,
-        num_news: int,
-        num_categories: int,
-        news_dim: int = 64,
-        category_dim: int = 16,
-        hidden_dim: int = 64
-    ):
+    def __init__(self, joint_embedding, hidden_dim: int = 64):
         super().__init__()
-        
-        self.long_term_embedding = LongTermEmbedding(
-            num_news=num_news,
-            num_categories=num_categories,
-            news_dim=news_dim,
-            category_dim=category_dim
-        )
-        
-        embedding_dim = news_dim + category_dim
+
+        self.long_term_embedding = LongTermEmbedding(joint_embedding)
+
+        embedding_dim = joint_embedding.news_dim + joint_embedding.category_dim
         self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
+
 
     def forward(self, long_term_sequence):
         Z, delta_t = self.long_term_embedding(long_term_sequence)
