@@ -32,6 +32,7 @@ def load_data(path):
 def evaluate_model(short_model, long_model, fusion_gate, scorer,
                    short_term_data, long_term_data, MODE):
 
+    print("Evaluating model...")
     short_model.eval()
     long_model.eval()
     fusion_gate.eval()
@@ -69,8 +70,6 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
                 user_vec = 0.5 * (st_vec + lt_vec)
             else:
                 user_vec, _ = fusion_gate(st_vec, lt_vec)
-            
-            print("user shape:", user_vec.shape)
 
             scores, _ = scorer(user_vec, [candidates])
             scores = scores[0]
@@ -174,7 +173,7 @@ def train_model(train_short, train_long,
             batch_st = torch.cat(batch_st, dim=0)
             batch_lt = torch.cat(batch_lt, dim=0)
 
-            print("batch_st shape:", batch_st.shape)
+            print("batch_st shape:", batch_st.shape, "epoch: ", epoch+1)
 
             if MODE == "short_only":
                 user_vec = batch_st
@@ -255,7 +254,7 @@ if __name__ == "__main__":
         "embedding_dim": 64,
         "hidden_dim": 64,
         "learning_rate": 0.001,
-        "num_epochs": 10,
+        "num_epochs": 15,
         "mode": MODE,
         "optimizer": "Adam",
         "batch_size": BATCH_SIZE,
