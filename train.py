@@ -72,8 +72,11 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
                                           lt_vec.unsqueeze(0))
                 user_vec = user_vec.squeeze(0)
 
-            scores, _ = scorer(user_vec.unsqueeze(0), [candidates])
-            scores = scores.squeeze(0)
+            user_vec_batch = user_vec.unsqueeze(0)   # (1, D)
+            candidates_batch = [candidates]          # list of size 1
+
+            scores, _ = scorer(user_vec_batch, candidates_batch)
+            scores = scores[0]
 
             sorted_indices = torch.argsort(scores, descending=True)
             rank_pos = (sorted_indices == clicked_index).nonzero(as_tuple=True)
