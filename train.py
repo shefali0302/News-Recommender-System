@@ -255,7 +255,7 @@ if __name__ == "__main__":
         "embedding_dim": 64,
         "hidden_dim": 64,
         "learning_rate": 0.001,
-        "num_epochs": 5,
+        "num_epochs": 10,
         "mode": MODE,
         "optimizer": "Adam",
         "batch_size": BATCH_SIZE,
