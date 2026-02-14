@@ -68,14 +68,11 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             elif MODE == "no_gate":
                 user_vec = 0.5 * (st_vec + lt_vec)
             else:
-                user_vec, _ = fusion_gate(st_vec.unsqueeze(0),
-                                          lt_vec.unsqueeze(0))
-                user_vec = user_vec.squeeze(0)
+                user_vec, _ = fusion_gate(st_vec, lt_vec)
+            
+            print("user shape:", user_vec.shape)
 
-            user_vec_batch = user_vec.unsqueeze(0)   # (1, D)
-            candidates_batch = [candidates]          # list of size 1
-
-            scores, _ = scorer(user_vec_batch, candidates_batch)
+            scores, _ = scorer(user_vec, [candidates])
             scores = scores[0]
 
             sorted_indices = torch.argsort(scores, descending=True)
@@ -87,6 +84,8 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             ndcg5_list.append(compute_ndcg(rank, 5))
             ndcg10_list.append(compute_ndcg(rank, 10))
             auc_list.append(compute_auc(scores, clicked_index))
+
+    
 
     return {
         "MRR": sum(mrr_list) / max(1, len(mrr_list)),
@@ -163,8 +162,8 @@ def train_model(train_short, train_long,
                 st_vec, _, _ = short_model(short_seq)
                 lt_vec, _, _ = long_model(long_seq)
 
-                batch_st.append(st_vec.squeeze(0))
-                batch_lt.append(lt_vec.squeeze(0))
+                batch_st.append(st_vec)
+                batch_lt.append(lt_vec)
 
                 batch_candidates.append(candidates)
                 batch_targets.append(clicked_index)
@@ -172,8 +171,10 @@ def train_model(train_short, train_long,
             if len(batch_st) == 0:
                 continue
 
-            batch_st = torch.stack(batch_st)  # (B, D)
-            batch_lt = torch.stack(batch_lt)  # (B, D)
+            batch_st = torch.cat(batch_st, dim=0)
+            batch_lt = torch.cat(batch_lt, dim=0)
+
+            print("batch_st shape:", batch_st.shape)
 
             if MODE == "short_only":
                 user_vec = batch_st
