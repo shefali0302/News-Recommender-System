@@ -16,16 +16,31 @@ class ItemScorer(nn.Module):
 
     def forward(self, user_vec, candidate_news_ids):
         """
-        user_vec: (D,)
-        candidate_news_ids: list[int]
+        user_vec: (B, D)
+        candidate_news_ids: list of lists (len B)
         """
         device = user_vec.device
+        batch_size = len(candidate_news_ids)
 
-        candidate_ids = torch.tensor(candidate_news_ids, dtype=torch.long, device=device)  # (M,)
-        news_vecs = self.news_embedding(candidate_ids)   # (M, D)
+        max_len = max(len(c) for c in candidate_news_ids)
 
-        scores = torch.matmul(news_vecs, user_vec)       # (M,)
+        padded_candidates = torch.zeros(
+            batch_size, max_len,
+            dtype=torch.long,
+            device=device
+        )
 
-        probs = torch.softmax(scores, dim=0)
+        for i, cand in enumerate(candidate_news_ids):
+            padded_candidates[i, :len(cand)] = torch.tensor(
+            cand,
+            dtype=torch.long,
+            device=device
+            )
 
-        return scores, probs
+        news_vecs = self.news_embedding(padded_candidates)  # (B, M, D)
+
+        scores = torch.bmm(news_vecs, user_vec.unsqueeze(-1)).squeeze(-1)
+
+        return scores, torch.softmax(scores, dim=1)
+
+

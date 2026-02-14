@@ -20,21 +20,22 @@ class FusionGate(nn.Module):
         self.ws = nn.Parameter(torch.randn(dim) * 0.01)
         self.wl = nn.Parameter(torch.randn(dim) * 0.01)
         self.b = nn.Parameter(torch.zeros(1))
-
+    
     def forward(self, st, lt):
         """
-        st: Short-term vector (dim,)
-        lt: Long-term vector (dim,)
-        returns: fused user vector (dim,)
+        st: (B, D)
+        lt: (B, D)
         """
+        # Compute gate score per user
+        gate_score = (
+            torch.matmul(st, self.ws) +
+            torch.matmul(lt, self.wl) +
+            self.b
+        )  # (B,)
 
-        # Gate score (scalar)
-        gate_score = torch.dot(self.ws, st) + torch.dot(self.wl, lt) + self.b
+        gt = torch.sigmoid(gate_score).unsqueeze(-1)  # (B, 1)
 
-        # Sigmoid to keep gate between 0 and 1
-        gt = torch.sigmoid(gate_score)
-
-        # Fuse representations
-        fused_user_vector = gt * st + (1 - gt) * lt
+        fused_user_vector = gt * st + (1 - gt) * lt  # (B, D)
 
         return fused_user_vector, gt
+
