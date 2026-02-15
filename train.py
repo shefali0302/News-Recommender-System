@@ -18,6 +18,7 @@ from training.experiment_util import create_experiment_folder
 
 MODE = "full"
 BATCH_SIZE = 32
+NUM_EPOCHS = 15
 # options: "full", "short_only", "long_only", "no_gate"
 
 
@@ -254,7 +255,7 @@ if __name__ == "__main__":
         "embedding_dim": 64,
         "hidden_dim": 64,
         "learning_rate": 0.001,
-        "num_epochs": 15,
+        "num_epochs": NUM_EPOCHS,
         "mode": MODE,
         "optimizer": "Adam",
         "batch_size": BATCH_SIZE,
@@ -268,7 +269,7 @@ if __name__ == "__main__":
         train_short, train_long,
         dev_short, dev_long,
         news2idx, category2idx,
-        num_epochs=5
+        num_epochs=NUM_EPOCHS
     )
 
     print("\nFinal Evaluation on Dev Set")
