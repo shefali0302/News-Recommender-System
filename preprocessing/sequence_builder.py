@@ -9,12 +9,9 @@ from preprocessing.dataset_ingestion import (
     load_news_categories,
     load_user_interactions,
     map_interactions_to_indices,
-    sort_user_interactions,
-    NEWS_PATH,
-    BEHAVIORS_PATH
+    sort_user_interactions
 )
-
-
+from path_variables import TRAIN_NEWS, TRAIN_BEHAVIORS
 
 def compute_time_gaps(user_interactions):
     """
@@ -58,9 +55,9 @@ def build_user_interaction_sequences():
 
     print("\n========== SEQUENCE CONSTRUCTION START ==========\n")
 
-    news_category_map = load_news_categories(NEWS_PATH)
+    news_category_map = load_news_categories(TRAIN_NEWS)
 
-    user_interactions = load_user_interactions(BEHAVIORS_PATH, news_category_map)
+    user_interactions = load_user_interactions(TRAIN_BEHAVIORS, news_category_map)
     
     news2idx, cat2idx = build_id_mappings(user_interactions)
 

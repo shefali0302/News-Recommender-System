@@ -6,8 +6,6 @@
 
 import torch
 import torch.nn as nn
-import torch
-import torch.nn as nn
 
 class ItemScorer(nn.Module):
     def __init__(self, joint_embedding):

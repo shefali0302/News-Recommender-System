@@ -72,8 +72,14 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             else:
                 user_vec, _ = fusion_gate(st_vec, lt_vec)
 
+            # scores, _ = scorer(user_vec, [candidates])
+            # scores = scores[0]
+
+            # Make user_vec batch-shaped
+            user_vec = user_vec.unsqueeze(0)  # (1, D)
             scores, _ = scorer(user_vec, [candidates])
-            scores = scores[0]
+            scores = scores.squeeze(0)  # (M,)
+
 
             sorted_indices = torch.argsort(scores, descending=True)
             rank_pos = (sorted_indices == clicked_index).nonzero(as_tuple=True)
@@ -171,8 +177,12 @@ def train_model(train_short, train_long,
             if len(batch_st) == 0:
                 continue
 
-            batch_st = torch.cat(batch_st, dim=0)
-            batch_lt = torch.cat(batch_lt, dim=0)
+            # batch_st = torch.cat(batch_st, dim=0)
+            # batch_lt = torch.cat(batch_lt, dim=0)
+
+            batch_st = torch.stack(batch_st, dim=0)   # (B, D)
+            batch_lt = torch.stack(batch_lt, dim=0)   # (B, D)
+
 
             print("batch_st shape:", batch_st.shape, "epoch: ", epoch+1)
 
