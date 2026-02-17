@@ -2,6 +2,10 @@ import torch
 import path_variables as pv
 from sklearn.model_selection import train_test_split
 
+INPUT_PATH = "preprocessed_MINDsmall.pt"
+TRAIN_OUT = "MINDsmall_train_preprocessed_train.pt"
+VAL_OUT = "MINDsmall_train_preprocessed_val.pt"
+
 def split_preprocessed_pt(
     val_ratio=0.2,
     seed=42
@@ -9,12 +13,9 @@ def split_preprocessed_pt(
     if pv.DATASET != "MINDsmall":
         raise ValueError("split.py should only be used for MINDsmall dataset.")
     
-    input_path = pv.MIND_SMALL_PREPROCESSED_TRAIN
-    train_out = pv.MIND_SMALL_PREPROCESSED_TRAIN_TRAIN
-    val_out = pv.MIND_SMALL_PREPROCESSED_TRAIN_VAL
 
-    print("Loading:", input_path)
-    data = torch.load(input_path)
+    print("Loading:", INPUT_PATH)
+    data = torch.load(INPUT_PATH)
 
     short_term_data = data["short_term_data"]
     long_term_data = data["long_term_data"]
@@ -44,7 +45,7 @@ def split_preprocessed_pt(
         "long_term_data": train_long,
         "news2idx": news2idx,
         "category2idx": category2idx
-    }, train_out)
+    }, TRAIN_OUT)
 
     # Save validation
     torch.save({
@@ -52,7 +53,7 @@ def split_preprocessed_pt(
         "long_term_data": val_long,
         "news2idx": news2idx,
         "category2idx": category2idx
-    }, val_out)
+    }, VAL_OUT)
 
     print("Split complete.")
     print("Train users:", len(train_users))
