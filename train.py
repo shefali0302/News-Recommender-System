@@ -14,12 +14,13 @@ from models.embeddings import JointEmbedding
 from training.loss import compute_loss
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
 from training.experiment_util import create_experiment_folder
+from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS
 
 
 MODE = "full"
+# options: "full", "short_only", "long_only", "no_gate"
 BATCH_SIZE = 32
 NUM_EPOCHS = 15
-# options: "full", "short_only", "long_only", "no_gate"
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -252,6 +253,10 @@ if __name__ == "__main__":
 
     train_data = load_data("data/MINDsmall_train_preprocessed_train.pt")
     dev_data = load_data("data/MINDsmall_train_preprocessed_val.pt")
+
+    if DATASET == "MINDlarge":
+        train_data = load_data("data/MINDlarge_train_preprocessed.pt")
+        dev_data = load_data("data/MINDlarge_dev_preprocessed.pt")
 
     train_short = train_data["short_term_data"]
     train_long = train_data["long_term_data"]

@@ -1,17 +1,19 @@
 import torch
-import random
 import path_variables as pv
 from sklearn.model_selection import train_test_split
 
 def split_preprocessed_pt(
-    input_path=pv.MINDS_PREPROCESSED_TRAIN,
-    train_out=pv.MINDS_PREPROCESSED_TRAIN_TRAIN,
-    val_out=pv.MINDS_PREPROCESSED_TRAIN_VAL,
     val_ratio=0.2,
     seed=42
 ):
+    if pv.DATASET != "MINDsmall":
+        raise ValueError("split.py should only be used for MINDsmall dataset.")
+    
+    input_path = pv.MIND_SMALL_PREPROCESSED_TRAIN
+    train_out = pv.MIND_SMALL_PREPROCESSED_TRAIN_TRAIN
+    val_out = pv.MIND_SMALL_PREPROCESSED_TRAIN_VAL
 
-    # Load full dataset
+    print("Loading:", input_path)
     data = torch.load(input_path)
 
     short_term_data = data["short_term_data"]
