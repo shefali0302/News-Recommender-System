@@ -251,12 +251,12 @@ if __name__ == "__main__":
     MODE = "full"   # change this for ablation runs
     # options: "full", "short_only", "long_only", "no_gate"
 
-    train_data = load_data("data/MINDsmall_train_preprocessed_train.pt")
-    dev_data = load_data("data/MINDsmall_train_preprocessed_val.pt")
+    train_data = load_data("MINDsmall_train_preprocessed_train.pt")
+    dev_data = load_data("MINDsmall_train_preprocessed_val.pt")
 
     if DATASET == "MINDlarge":
-        train_data = load_data("data/MINDlarge_train_preprocessed.pt")
-        dev_data = load_data("data/MINDlarge_dev_preprocessed.pt")
+        train_data = load_data("MINDlarge_train_preprocessed.pt")
+        dev_data = load_data("MINDlarge_dev_preprocessed.pt")
 
     train_short = train_data["short_term_data"]
     train_long = train_data["long_term_data"]
