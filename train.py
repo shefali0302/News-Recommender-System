@@ -6,6 +6,7 @@
 import os
 import torch
 import torch.optim as optim
+import path_variables as pv
 from models.scoring import ItemScorer
 from models.short_term import ShortTermLTC
 from models.long_term import LongTermLTC
@@ -250,8 +251,8 @@ if __name__ == "__main__":
     MODE = "full"   # change this for ablation runs
     # options: "full", "short_only", "long_only", "no_gate"
 
-    train_data = load_data("data/MINDsmall_train_preprocessed_train.pt")
-    dev_data = load_data("data/MINDsmall_train_preprocessed_val.pt")
+    train_data = load_data(pv.MIND_SMALL_PREPROCESSED_TRAIN)
+    dev_data = load_data(pv.MIND_SMALL_PREPROCESSED_DEV)
 
     train_short = train_data["short_term_data"]
     train_long = train_data["long_term_data"]
