@@ -59,4 +59,4 @@ DEV_BEHAVIORS = os.path.join(DEV_PATH, "behaviors.tsv")
 PREPROCESSED_PATH = os.path.join(DATA_PATH, "preprocessed")
 
 MIND_SMALL_PREPROCESSED_TRAIN = os.path.join(PREPROCESSED_PATH, "MINDsmall_train_preprocessed_train.pt")
-MIND_SMALL_PREPROCESSED_DEV   = os.path.join(PREPROCESSED_PATH, "MINDsmall_train_preprocessed_dev.pt")
+MIND_SMALL_PREPROCESSED_DEV   = os.path.join(PREPROCESSED_PATH, "MINDsmall_train_preprocessed_val.pt")
