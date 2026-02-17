@@ -116,12 +116,17 @@ def train_model(train_short, train_long,
     scorer = ItemScorer(joint_embedding).to(device)
 
     optimizer = optim.Adam(
-        list(short_model.parameters()) +
-        list(long_model.parameters()) +
-        list(fusion_gate.parameters()) +
-        list(scorer.parameters()),
+        {
+            p for p in (
+                list(short_model.parameters()) +
+                list(long_model.parameters()) +
+                list(fusion_gate.parameters()) +
+                list(scorer.parameters())
+            )
+        },
         lr=0.001
     )
+
 
     best_score = 0
     patience = 3
@@ -195,6 +200,10 @@ def train_model(train_short, train_long,
                 user_vec = 0.5 * (batch_st + batch_lt)
             else:
                 user_vec, _ = fusion_gate(batch_st, batch_lt)
+
+            user_vec = user_vec.squeeze(1)
+            print("user_vec shape before scorer:", user_vec.shape)
+            print("batch_candidates shape:", len(batch_candidates))
 
             scores, _ = scorer(user_vec, batch_candidates)
 
