@@ -3,6 +3,7 @@ from preprocessing.sequence_builder import build_user_interaction_sequences
 from preprocessing.short_term_preprocessing import run_short_term_preprocessing
 from preprocessing.long_term_preprocessing import run_long_term_preprocessing
 from preprocessing.configs import N, alpha
+from path_variables import DATASET
 
 
 def run_preprocessing_pipeline():
@@ -26,4 +27,4 @@ if __name__ == "__main__":
         "long_term_data": long_term_data,
         "news2idx": news2idx,
         "category2idx": category2idx
-    }, "preprocessed_data.pt")
+    }, f"preprocessed_{DATASET}.pt")

@@ -8,17 +8,14 @@ import path_variables as pv
 from collections import defaultdict
 from datetime import datetime
 from tqdm import tqdm
-#from sequence_builder import compute_time_gaps, sort_user_interactions
-
-NEWS_PATH = pv.MINDS_TRAIN_NEWS
-BEHAVIORS_PATH = pv.MINDS_TRAIN_BEHAVIORS
+from path_variables import TRAIN_NEWS, TRAIN_BEHAVIORS
 
 def load_news_categories(news_path):
     """
     Returns: dict {news_id: category}
     """
     news_df = pd.read_csv(
-        news_path,
+        TRAIN_NEWS,
         sep="\t",
         header=None,
         names=[
@@ -42,7 +39,7 @@ def load_user_interactions(behaviors_path, news_category_map):
 
 
     behaviors_df = pd.read_csv(
-    behaviors_path,
+    TRAIN_BEHAVIORS,
     sep="\t",
     header=None,
     names=[
