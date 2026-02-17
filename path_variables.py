@@ -17,6 +17,10 @@ MIND_SMALL_PATH = os.path.join(DATA_PATH, "MINDsmall")
 MIND_SMALL_TRAIN = os.path.join(MIND_SMALL_PATH, "train") # 80% as training set, 20% as validation set
 MIND_SMALL_DEV   = os.path.join(MIND_SMALL_PATH, "dev") # as testing set
 
+# Preprocessed files for MINDsmall
+MIND_SMALL_PREPROCESSED_TRAIN = os.path.join(DATA_PATH, "preprocessed_MINDsmall.pt")
+MIND_SMALL_PREPROCESSED_TRAIN_TRAIN = os.path.join(DATA_PATH, "MINDsmall_train_preprocessed_train.pt")
+MIND_SMALL_PREPROCESSED_TRAIN_VAL = os.path.join(DATA_PATH, "MINDsmall_train_preprocessed_val.pt")
 
 # =========================================
 # LARGE DATASET PATHS
