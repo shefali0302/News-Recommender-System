@@ -7,7 +7,7 @@ import os
 import torch
 import torch.optim as optim
 import path_variables as pv
-from test import
+import test
 from models.scoring import ItemScorer
 from models.short_term import ShortTermLTC
 from models.long_term import LongTermLTC
