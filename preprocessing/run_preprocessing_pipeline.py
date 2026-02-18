@@ -1,4 +1,5 @@
 import torch
+import os
 from preprocessing.dataset_ingestion import load_news_categories, load_user_interactions
 from preprocessing.sequence_builder import build_user_interaction_sequences
 from preprocessing.short_term_preprocessing import run_short_term_preprocessing
@@ -26,7 +27,7 @@ def run_test_preprocessing_pipeline():
         pv.MIND_SMALL_PREPROCESSED_TRAIN
     )
 
-    news_category_map = load_news_categories(pv.NEWS_PATH)
+    news_category_map = load_news_categories(pv.TEST_NEWS)
     raw_interactions = load_user_interactions(
         pv.TEST_BEHAVIORS,
         news_category_map
@@ -64,9 +65,11 @@ if __name__ == "__main__":
 
     elif pv.MODE=="test":
         short_term_data, long_term_data = run_test_preprocessing_pipeline()
+        save_path = pv.MIND_SMALL_PREPROCESSED_TEST if pv.DATASET=="MINDsmall" else pv.MIND_LARGE_PREPROCESSED_TEST
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         torch.save({
             "short_term_data": short_term_data,
             "long_term_data": long_term_data,
-        }, pv.MIND_SMALL_PREPROCESSED_TEST if pv.DATASET=="MINDsmall" else pv.MIND_LARGE_PREPROCESSED_TEST)
+        }, save_path)
     
     print("\n========== PREPROCESSING DONE ==========\n")
