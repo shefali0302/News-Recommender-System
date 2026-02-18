@@ -7,6 +7,7 @@ import os
 import torch
 import torch.optim as optim
 import path_variables as pv
+from test import
 from models.scoring import ItemScorer
 from models.short_term import ShortTermLTC
 from models.long_term import LongTermLTC
@@ -119,6 +120,7 @@ def train_model(train_short, train_long,
     optimizer = optim.Adam(
         {
             p for p in (
+                list(joint_embedding.paramenters())+
                 list(short_model.parameters()) +
                 list(long_model.parameters()) +
                 list(fusion_gate.parameters()) +
@@ -183,9 +185,6 @@ def train_model(train_short, train_long,
 
             if len(batch_st) == 0:
                 continue
-
-            # batch_st = torch.cat(batch_st, dim=0)
-            # batch_lt = torch.cat(batch_lt, dim=0)
 
             batch_st = torch.stack(batch_st, dim=0)   # (B, D)
             batch_lt = torch.stack(batch_lt, dim=0)   # (B, D)
@@ -262,7 +261,7 @@ if __name__ == "__main__":
     # options: "full", "short_only", "long_only", "no_gate"
 
     train_data = load_data("MINDsmall_train_preprocessed_train.pt")
-    dev_data = load_data("MINDsmall_train_preprocessed_val.pt")
+    dev_data = load_data("MINDsmall_preprocessed_test.pt")
 
     if DATASET == "MINDlarge":
         train_data = load_data("MINDlarge_train_preprocessed.pt")
