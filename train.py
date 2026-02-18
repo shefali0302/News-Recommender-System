@@ -15,12 +15,13 @@ from models.embeddings import JointEmbedding
 from training.loss import compute_loss
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
 from training.experiment_util import create_experiment_folder
+from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS
 
 
 MODE = "full"
+# options: "full", "short_only", "long_only", "no_gate"
 BATCH_SIZE = 32
 NUM_EPOCHS = 15
-# options: "full", "short_only", "long_only", "no_gate"
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -116,12 +117,17 @@ def train_model(train_short, train_long,
     scorer = ItemScorer(joint_embedding).to(device)
 
     optimizer = optim.Adam(
-        list(short_model.parameters()) +
-        list(long_model.parameters()) +
-        list(fusion_gate.parameters()) +
-        list(scorer.parameters()),
+        {
+            p for p in (
+                list(short_model.parameters()) +
+                list(long_model.parameters()) +
+                list(fusion_gate.parameters()) +
+                list(scorer.parameters())
+            )
+        },
         lr=0.001
     )
+
 
     best_score = 0
     patience = 3
@@ -196,6 +202,10 @@ def train_model(train_short, train_long,
             else:
                 user_vec, _ = fusion_gate(batch_st, batch_lt)
 
+            user_vec = user_vec.squeeze(1)
+            print("user_vec shape before scorer:", user_vec.shape)
+            print("batch_candidates shape:", len(batch_candidates))
+
             scores, _ = scorer(user_vec, batch_candidates)
 
             loss = 0
@@ -251,8 +261,12 @@ if __name__ == "__main__":
     MODE = "full"   # change this for ablation runs
     # options: "full", "short_only", "long_only", "no_gate"
 
-    train_data = load_data(pv.MIND_SMALL_PREPROCESSED_TRAIN)
-    dev_data = load_data(pv.MIND_SMALL_PREPROCESSED_DEV)
+    train_data = load_data("MINDsmall_train_preprocessed_train.pt")
+    dev_data = load_data("MINDsmall_train_preprocessed_val.pt")
+
+    if DATASET == "MINDlarge":
+        train_data = load_data("MINDlarge_train_preprocessed.pt")
+        dev_data = load_data("MINDlarge_dev_preprocessed.pt")
 
     train_short = train_data["short_term_data"]
     train_long = train_data["long_term_data"]

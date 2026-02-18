@@ -4,18 +4,16 @@ This module parses the MIND dataset and converts raw behavior logs into time-ord
 
 import os
 import pandas as pd
-import path_variables as pv
 from collections import defaultdict
 from datetime import datetime
 from tqdm import tqdm
-from path_variables import TRAIN_NEWS, TRAIN_BEHAVIORS
 
 def load_news_categories(news_path):
     """
     Returns: dict {news_id: category}
     """
     news_df = pd.read_csv(
-        TRAIN_NEWS,
+        news_path,
         sep="\t",
         header=None,
         names=[
@@ -37,9 +35,8 @@ def load_user_interactions(behaviors_path, news_category_map):
     dict {user_id: [(news_id, timestamp, category), ...]}
     """
 
-
     behaviors_df = pd.read_csv(
-    TRAIN_BEHAVIORS,
+    behaviors_path,
     sep="\t",
     header=None,
     names=[
