@@ -24,7 +24,7 @@ def run_preprocessing_pipeline():
 
 def run_test_preprocessing_pipeline():
     news2idx, category2idx = utils.load_train_mappings(
-        pv.MIND_SMALL_PREPROCESSED_TRAIN
+        pv.MIND_SMALL_PREPROCESSED_TRAIN if pv.DATASET=="MINDsmall" else pv.MIND_LARGE_PREPROCESSED_TRAIN
     )
 
     news_category_map = load_news_categories(pv.TEST_NEWS)
@@ -61,7 +61,7 @@ if __name__ == "__main__":
             "long_term_data": long_term_data,
             "news2idx": news2idx,
             "category2idx": category2idx
-        }, pv.MIND_SMALL_PREPROCESSED_TRAIN if pv.DATASET=="MINDsmall" else pv.MIND_LARGE_PREPROCESSED_TRAIN)
+        },  f"preprocessed_{pv.DATASET}_train.pt")
 
     elif pv.MODE=="test":
         short_term_data, long_term_data = run_test_preprocessing_pipeline()
