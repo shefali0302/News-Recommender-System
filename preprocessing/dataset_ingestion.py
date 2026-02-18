@@ -8,6 +8,8 @@ from collections import defaultdict
 from datetime import datetime
 from tqdm import tqdm
 
+
+
 def load_news_categories(news_path):
     """
     Returns: dict {news_id: category}

@@ -3,6 +3,7 @@ import math
 from typing import Counter
 from collections import Counter
 import numpy as np
+import torch
 
 
 #--------short term helper functions ---------
@@ -128,3 +129,47 @@ def build_daily_chunk_sequence(user_daily_chunks):
         user_sequences[user_id] = sequence
 
     return user_sequences
+
+def load_train_mappings(train_preprocessed_path):
+    data = torch.load(train_preprocessed_path)
+    return data["news2idx"], data["category2idx"]
+
+#for testing preprocessing pipeline
+def map_to_existing_indices(user_interactions, news2idx, category2idx):
+
+    mapped = {}
+
+    for user_id, interactions in user_interactions.items():
+
+        mapped_list = []
+
+        for news_id, timestamp, category in interactions:
+
+            news_idx = news2idx.get(news_id, 0)        # unseen → padding
+            cat_idx  = category2idx.get(category, 0)
+
+            mapped_list.append((news_idx, timestamp, cat_idx))
+
+        # sort chronologically
+        mapped_list.sort(key=lambda x: x[1])
+
+        # compute delta_t
+        with_dt = []
+        prev_time = None
+
+        for news_idx, timestamp, cat_idx in mapped_list:
+
+            if prev_time is None:
+                delta_t = 0
+            else:
+                delta_t = (timestamp - prev_time).total_seconds()
+
+            with_dt.append(
+                (news_idx, timestamp, cat_idx, delta_t)
+            )
+
+            prev_time = timestamp
+
+        mapped[user_id] = with_dt
+
+    return mapped
