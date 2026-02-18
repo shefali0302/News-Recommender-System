@@ -26,7 +26,7 @@ def run_test_preprocessing_pipeline():
         pv.MIND_SMALL_PREPROCESSED_TRAIN
     )
 
-    news_category_map = load_news_categories(pv.NEWS_PATH)
+    news_category_map = load_news_categories(pv.TEST_NEWS)
     raw_interactions = load_user_interactions(
         pv.TEST_BEHAVIORS,
         news_category_map
