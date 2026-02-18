@@ -7,7 +7,7 @@ DATA_PATH = os.path.join(BASE_DIR, "data")
 # SELECT DATASET HERE
 # =========================================
 DATASET = "MINDsmall"      # change to "MINDlarge" when needed
-MODE= "train"
+MODE= "test"
 
 # =========================================
 # SMALL DATASET PATHS
@@ -32,6 +32,7 @@ MIND_LARGE_TEST  = os.path.join(MIND_LARGE_PATH, "test")
 # =========================================
 if DATASET == "MINDsmall":
     TRAIN_PATH = MIND_SMALL_TRAIN
+    DEV_PATH   = MIND_SMALL_TRAIN  
     TEST_PATH   = MIND_SMALL_TEST
 
 elif DATASET == "MINDlarge":
