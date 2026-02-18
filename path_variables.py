@@ -1,12 +1,11 @@
 import os
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "data")
 
 # =========================================
 # SELECT DATASET HERE
 # =========================================
-DATASET = "MINDsmall"      # change to "MINDlarge" when needed
+DATASET = "MINDlarge"      # change to "MINDlarge" when needed
 MODE= "test"
 
 # =========================================
@@ -68,4 +67,4 @@ MIND_SMALL_PREPROCESSED_TEST  = os.path.join(BASE_DIR, "preprocessed_MINDsmall_t
 
 MIND_LARGE_PREPROCESSED_TRAIN = os.path.join(PREPROCESSED_PATH, "MINDlarge_train_preprocessed.pt")
 MIND_LARGE_PREPROCESSED_DEV   = os.path.join(PREPROCESSED_PATH, "MINDlarge_dev_preprocessed.pt")
-MIND_LARGE_PREPROCESSED_TEST  = os.path.join(PREPROCESSED_PATH, "MINDlarge_test_preprocessed.pt")
+MIND_LARGE_PREPROCESSED_TEST  = os.path.join(BASE_DIR, "preprocessed_MINDlarge_test.pt")
