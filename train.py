@@ -121,7 +121,7 @@ def train_model(train_short, train_long,
     optimizer = optim.Adam(
         {
             p for p in (
-                list(joint_embedding.paramenters())+
+                list(joint_embedding.parameters())+
                 list(short_model.parameters()) +
                 list(long_model.parameters()) +
                 list(fusion_gate.parameters()) +
