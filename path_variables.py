@@ -65,6 +65,6 @@ MIND_SMALL_PREPROCESSED_TRAIN = os.path.join(PREPROCESSED_PATH, "MINDsmall_train
 MIND_SMALL_PREPROCESSED_DEV   = os.path.join(PREPROCESSED_PATH, "MINDsmall_train_preprocessed_val.pt")
 MIND_SMALL_PREPROCESSED_TEST  = os.path.join(BASE_DIR, "preprocessed_MINDsmall_test.pt")
 
-MIND_LARGE_PREPROCESSED_TRAIN = os.path.join(PREPROCESSED_PATH, "MINDlarge_train_preprocessed.pt")
+MIND_LARGE_PREPROCESSED_TRAIN = os.path.join(BASE_DIR, "preprocessed_MINDlarge.pt")
 MIND_LARGE_PREPROCESSED_DEV   = os.path.join(PREPROCESSED_PATH, "MINDlarge_dev_preprocessed.pt")
 MIND_LARGE_PREPROCESSED_TEST  = os.path.join(BASE_DIR, "preprocessed_MINDlarge_test.pt")
