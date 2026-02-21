@@ -264,9 +264,9 @@ if __name__ == "__main__":
     train_data = load_data(pv.MIND_SMALL_PREPROCESSED_TRAIN )
     dev_data = load_data(pv.MIND_SMALL_PREPROCESSED_DEV)
 
-    if DATASET == "MINDlarge":
-        train_data = load_data(pv.MIND_LARGE_PREPROCESSED_TRAIN)
-        dev_data = load_data(pv.MIND_LARGE_PREPROCESSED_DEV)
+    #if DATASET == "MINDlarge":
+        #train_data = load_data(pv.MIND_LARGE_PREPROCESSED_TRAIN)
+        #dev_data = load_data(pv.MIND_LARGE_PREPROCESSED_DEV)
 
     train_short = train_data["short_term_data"]
     train_long = train_data["long_term_data"]
