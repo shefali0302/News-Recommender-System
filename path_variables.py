@@ -5,8 +5,8 @@ DATA_PATH = os.path.join(BASE_DIR, "data")
 # =========================================
 # SELECT DATASET HERE
 # =========================================
-DATASET = "MINDlarge"      # change to "MINDlarge" when needed
-MODE= "test"
+DATASET = "MINDsmall"      # change to "MINDlarge" when needed
+MODE= "train"
 
 # =========================================
 # SMALL DATASET PATHS
