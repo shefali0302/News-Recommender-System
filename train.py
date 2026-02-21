@@ -21,8 +21,9 @@ from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS
 
 MODE = "full"
 # options: "full", "short_only", "long_only", "no_gate"
-BATCH_SIZE = 32
-NUM_EPOCHS = 15
+BATCH_SIZE = 128
+NUM_EPOCHS = 6
+LR=0.0001
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -127,7 +128,7 @@ def train_model(train_short, train_long,
                 list(scorer.parameters())
             )
         },
-        lr=0.001
+        lr=LR
     )
 
 
@@ -260,12 +261,12 @@ if __name__ == "__main__":
     MODE = "full"   # change this for ablation runs
     # options: "full", "short_only", "long_only", "no_gate"
 
-    train_data = load_data("MINDsmall_train_preprocessed_train.pt")
-    dev_data = load_data("MINDsmall_preprocessed_test.pt")
+    train_data = load_data(pv.MIND_SMALL_PREPROCESSED_TRAIN )
+    dev_data = load_data(pv.MIND_SMALL_PREPROCESSED_DEV)
 
     if DATASET == "MINDlarge":
-        train_data = load_data("MINDlarge_train_preprocessed.pt")
-        dev_data = load_data("MINDlarge_dev_preprocessed.pt")
+        train_data = load_data(pv.MIND_LARGE_PREPROCESSED_TRAIN)
+        dev_data = load_data(pv.MIND_LARGE_PREPROCESSED_DEV)
 
     train_short = train_data["short_term_data"]
     train_long = train_data["long_term_data"]
@@ -276,9 +277,9 @@ if __name__ == "__main__":
     dev_long = dev_data["long_term_data"]
 
     config = {
-        "embedding_dim": 64,
-        "hidden_dim": 64,
-        "learning_rate": 0.001,
+        "embedding_dim": 100,
+        "hidden_dim": 100,
+        "learning_rate": LR,
         "num_epochs": NUM_EPOCHS,
         "mode": MODE,
         "optimizer": "Adam",
