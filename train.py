@@ -21,9 +21,9 @@ from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS
 
 MODE = "full"
 # options: "full", "short_only", "long_only", "no_gate"
-BATCH_SIZE = 128
-NUM_EPOCHS = 6
-LR=0.0001
+BATCH_SIZE = 32
+NUM_EPOCHS = 15
+LR=0.001
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -277,8 +277,8 @@ if __name__ == "__main__":
     dev_long = dev_data["long_term_data"]
 
     config = {
-        "embedding_dim": 100,
-        "hidden_dim": 100,
+        "embedding_dim": 64,
+        "hidden_dim": 64,
         "learning_rate": LR,
         "num_epochs": NUM_EPOCHS,
         "mode": MODE,
