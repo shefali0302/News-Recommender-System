@@ -72,18 +72,8 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             short_seq = short_term_data[user_id]
             long_seq = long_term_data.get(user_id, None)
 
-            # Remove clicked news from short-term history if present
-            clicked_news_idx = candidates[clicked_index]
-
-            short_seq = [
-                x for x in short_seq
-                if x[0] != clicked_news_idx
-            ]
-
-            if len(short_seq) < 1:
+            if long_seq is None or len(short_seq) < 2:
                 continue
-
-            if long_seq is None or len(short_seq) < 2: continue
 
             impression_pairs = impressions.split(" ")
 
@@ -102,6 +92,17 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
                     clicked_index = len(candidates) - 1
 
             if clicked_index is None or len(candidates) == 0:
+                continue
+
+            # 🔥 Remove clicked news from history to avoid leakage
+            clicked_news_idx = candidates[clicked_index]
+
+            short_seq = [
+                x for x in short_seq
+                if x[0] != clicked_news_idx
+            ]
+
+            if len(short_seq) < 1:
                 continue
 
             # ===== Compute user representation =====
