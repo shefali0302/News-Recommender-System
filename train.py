@@ -5,9 +5,10 @@
 # ----------------------------------------------------------------------
 import os
 import torch
+import random
 import torch.optim as optim
 import path_variables as pv
-import test
+import pandas as pd
 from models.scoring import ItemScorer
 from models.short_term import ShortTermLTC
 from models.long_term import LongTermLTC
@@ -16,7 +17,7 @@ from models.embeddings import JointEmbedding
 from training.loss import compute_loss
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
 from training.experiment_util import create_experiment_folder
-from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS
+from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS, DEV_BEHAVIORS
 
 
 MODE = "full"
@@ -35,7 +36,15 @@ def load_data(path):
 
 
 def evaluate_model(short_model, long_model, fusion_gate, scorer,
-                   short_term_data, long_term_data, MODE):
+                   short_term_data, long_term_data, MODE,
+                   behaviors_path, news2idx):
+
+    behaviors_df = pd.read_csv(
+        behaviors_path,
+        sep="\t",
+        header=None,
+        names=["impression_id", "user_id", "time", "history", "impressions"]
+    )
 
     print("Evaluating model...")
     short_model.eval()
@@ -50,20 +59,41 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
 
     with torch.no_grad():
 
-        for user_id in short_term_data:
+        for _, row in behaviors_df.iterrows():
 
-            if user_id not in long_term_data:
-                continue
+            user_id = row["user_id"]
+
+            if user_id not in short_term_data: continue
+
+            impressions = row["impressions"]
+
+            if pd.isna(impressions): continue
 
             short_seq = short_term_data[user_id]
-            long_seq = long_term_data[user_id]
+            long_seq = long_term_data.get(user_id, None)
 
-            if len(short_seq) < 2:
+            if long_seq is None or len(short_seq) < 2: continue
+
+            impression_pairs = impressions.split(" ")
+
+            candidates = []
+            clicked_index = None
+
+            for idx, pair in enumerate(impression_pairs):
+                news_id, label = pair.split("-")
+
+                if news_id not in news2idx:
+                    continue
+
+                candidates.append(news2idx[news_id])
+
+                if label == "1":
+                    clicked_index = len(candidates) - 1
+
+            if clicked_index is None or len(candidates) == 0:
                 continue
 
-            candidates = [x[0] for x in short_seq]
-            clicked_index = len(candidates) - 1
-
+            # ===== Compute user representation =====
             st_vec, _, _ = short_model(short_seq)
             lt_vec, _, _ = long_model(long_seq)
 
@@ -76,26 +106,24 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             else:
                 user_vec, _ = fusion_gate(st_vec, lt_vec)
 
-            # scores, _ = scorer(user_vec, [candidates])
-            # scores = scores[0]
+            # Batch shape
+            user_vec = user_vec.unsqueeze(0)
 
-            # Make user_vec batch-shaped
-            user_vec = user_vec.unsqueeze(0)  # (1, D)
+            # Score candidates
             scores, _ = scorer(user_vec, [candidates])
-            scores = scores.squeeze(0)  # (M,)
+            scores = scores.squeeze(0)
 
-
+            # Rank computation
             sorted_indices = torch.argsort(scores, descending=True)
             rank_pos = (sorted_indices == clicked_index).nonzero(as_tuple=True)
 
             rank = rank_pos[0].item() + 1 if len(rank_pos[0]) > 0 else None
 
+            # Metrics
             mrr_list.append(compute_mrr(rank))
             ndcg5_list.append(compute_ndcg(rank, 5))
             ndcg10_list.append(compute_ndcg(rank, 10))
             auc_list.append(compute_auc(scores, clicked_index))
-
-    
 
     return {
         "MRR": sum(mrr_list) / max(1, len(mrr_list)),
@@ -138,6 +166,7 @@ def train_model(train_short, train_long,
 
     user_ids = list(train_short.keys())
 
+    all_news_indices = list(range(1, max(news2idx.values()) + 1))
     for epoch in range(num_epochs):
         print("epoch: ", epoch+1)
         print("short term model training")
@@ -172,15 +201,39 @@ def train_model(train_short, train_long,
                 if len(short_seq) < 2:
                     continue
 
-                candidates = [x[0] for x in short_seq]
-                clicked_index = len(candidates) - 1
+                # -----------------------------
+                # Leave-One-Out Setup
+                # -----------------------------
+                input_seq = short_seq[:-1]     # remove last item
+                positive_item = short_seq[-1][0]   # news_idx
 
-                st_vec, _, _ = short_model(short_seq)
+                # Build user history set to avoid sampling clicked items
+                user_clicked = set(x[0] for x in short_seq)
+
+                # -----------------------------
+                # Negative Sampling
+                # -----------------------------
+                K = 4   # you can try 4 or 9
+                negatives = []
+                while len(negatives) < K:
+                    neg = random.choice(all_news_indices)
+                    if neg not in user_clicked:
+                        negatives.append(neg)
+
+                # Candidate set = 1 positive + K negatives
+                candidates = [positive_item] + negatives
+                random.shuffle(candidates)
+
+                clicked_index = candidates.index(positive_item)
+
+                # -----------------------------
+                # Compute user representation
+                # -----------------------------
+                st_vec, _, _ = short_model(input_seq)
                 lt_vec, _, _ = long_model(long_seq)
 
                 batch_st.append(st_vec)
                 batch_lt.append(lt_vec)
-
                 batch_candidates.append(candidates)
                 batch_targets.append(clicked_index)
 
@@ -225,7 +278,9 @@ def train_model(train_short, train_long,
         val_metrics = evaluate_model(
             short_model, long_model,
             fusion_gate, scorer,
-            val_short, val_long, MODE
+            val_short, val_long, MODE,
+            pv.DEV_BEHAVIORS,
+            news2idx
         )
 
         print("Validation:", val_metrics)
@@ -306,7 +361,9 @@ if __name__ == "__main__":
         scorer,
         dev_short,
         dev_long,
-        MODE
+        MODE,
+        pv.DEV_BEHAVIORS,
+        news2idx
     )
 
     with open(os.path.join(exp_dir, "final_metrics.txt"), "w") as f:
