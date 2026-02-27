@@ -94,7 +94,7 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             if clicked_index is None or len(candidates) == 0:
                 continue
 
-            # 🔥 Remove clicked news from history to avoid leakage
+            # Remove clicked news from history to avoid leakage
             clicked_news_idx = candidates[clicked_index]
 
             short_seq = [
@@ -255,9 +255,6 @@ def train_model(train_short, train_long,
             batch_st = torch.stack(batch_st, dim=0)   # (B, D)
             batch_lt = torch.stack(batch_lt, dim=0)   # (B, D)
 
-
-            print("batch_st shape:", batch_st.shape, "epoch: ", epoch+1)
-
             if MODE == "short_only":
                 user_vec = batch_st
             elif MODE == "long_only":
@@ -268,8 +265,6 @@ def train_model(train_short, train_long,
                 user_vec, _ = fusion_gate(batch_st, batch_lt)
 
             user_vec = user_vec.squeeze(1)
-            print("user_vec shape before scorer:", user_vec.shape)
-            print("batch_candidates shape:", len(batch_candidates))
 
             scores, _ = scorer(user_vec, batch_candidates)
 
