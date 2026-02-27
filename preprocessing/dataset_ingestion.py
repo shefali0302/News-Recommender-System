@@ -60,18 +60,27 @@ def load_user_interactions(behaviors_path, news_category_map):
             time_str, "%m/%d/%Y %I:%M:%S %p"
         )
 
-        history = row["history"]
+    history = row["history"]
+    impressions = row["impressions"]
 
-        if pd.isna(history):
-            continue
+    news_ids = []
 
-        clicked_news = history.split(" ")
+    # Add history clicks
+    if not pd.isna(history):
+        news_ids.extend(history.split(" "))
 
-        for news_id in clicked_news:
-            category = news_category_map.get(news_id, "unknown")
-            user_interactions[user_id].append(
-                (news_id, timestamp, category)
-            )
+    # Add impression candidates
+    if not pd.isna(impressions):
+        impression_pairs = impressions.split(" ")
+        for pair in impression_pairs:
+            news_id = pair.split("-")[0]
+            news_ids.append(news_id)
+
+    for news_id in news_ids:
+        category = news_category_map.get(news_id, "unknown")
+        user_interactions[user_id].append(
+            (news_id, timestamp, category)
+        )
 
     return user_interactions
 
