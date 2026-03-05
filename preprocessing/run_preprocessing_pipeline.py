@@ -23,9 +23,7 @@ def run_preprocessing_pipeline():
     return short_term_data, long_term_data, news2idx, category2idx
 
 def run_test_preprocessing_pipeline():
-    news2idx, category2idx = utils.load_train_mappings(
-        pv.MIND_SMALL_PREPROCESSED_TRAIN if pv.DATASET=="MINDsmall" else pv.MIND_LARGE_PREPROCESSED_TRAIN
-    )
+    news2idx, category2idx = utils.load_train_mappings(os.path.join("data", "preprocessed", f"preprocessed_{pv.DATASET}_train"))
 
     news_category_map = load_news_categories(pv.TEST_NEWS)
     raw_interactions = load_user_interactions(
@@ -54,6 +52,7 @@ def run_test_preprocessing_pipeline():
 if __name__ == "__main__":
     print("\n========== PREPROCESSING START ==========\n")
 
+    save_path = os.path.join("data", "preprocessed", f"preprocessed_{pv.DATASET}_{pv.MODE}.pt")
     if pv.MODE=="train":
         short_term_data, long_term_data, news2idx, category2idx = run_preprocessing_pipeline()
         torch.save({
@@ -61,15 +60,13 @@ if __name__ == "__main__":
             "long_term_data": long_term_data,
             "news2idx": news2idx,
             "category2idx": category2idx
-        },  f"preprocessed_{pv.DATASET}_train.pt")
+        },  save_path)
 
     elif pv.MODE=="test":
         short_term_data, long_term_data = run_test_preprocessing_pipeline()
-        #save_path = pv.MIND_SMALL_PREPROCESSED_TEST if pv.DATASET=="MINDsmall" else pv.MIND_LARGE_PREPROCESSED_TEST
-        #os.makedirs(os.path.dirname(save_path), exist_ok=True)
         torch.save({
             "short_term_data": short_term_data,
             "long_term_data": long_term_data,
-        }, f"preprocessed_{pv.DATASET}_test.pt")
+        }, save_path)
     
     print("\n========== PREPROCESSING DONE ==========\n")

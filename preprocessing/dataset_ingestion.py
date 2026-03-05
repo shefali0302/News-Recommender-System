@@ -38,15 +38,15 @@ def load_user_interactions(behaviors_path, news_category_map):
     """
 
     behaviors_df = pd.read_csv(
-    behaviors_path,
-    sep="\t",
-    header=None,
-    names=[
-        "impression_id", "user_id",
-        "time", "history", "impressions"
-    ],
-    #dtype=str   # VERY IMPORTANT
-)
+        behaviors_path,
+        sep="\t",
+        header=None,
+        names=[
+            "impression_id", "user_id",
+            "time", "history", "impressions"
+        ],
+        #dtype=str   
+    )
 
 
     user_interactions = defaultdict(list)
@@ -60,42 +60,38 @@ def load_user_interactions(behaviors_path, news_category_map):
             time_str, "%m/%d/%Y %I:%M:%S %p"
         )
 
-    history = row["history"]
-    impressions = row["impressions"]
+        history = row["history"]
+        # impressions = row["impressions"]
 
-    news_ids = []
+        news_ids = []
 
-    # Add history clicks
-    if not pd.isna(history):
-        news_ids.extend(history.split(" "))
+        # Add history clicks
+        if not pd.isna(history):
+            news_ids.extend(history.split(" "))
 
-    # Add impression candidates
-    if not pd.isna(impressions):
-        impression_pairs = impressions.split(" ")
-        for pair in impression_pairs:
-            news_id = pair.split("-")[0]
-            news_ids.append(news_id)
+        # Add impression candidates
+        # if not pd.isna(impressions):
+        #     impression_pairs = impressions.split(" ")
+        #     for pair in impression_pairs:
+        #         news_id = pair.split("-")[0]
+        #         news_ids.append(news_id)
 
-    for news_id in news_ids:
-        category = news_category_map.get(news_id, "unknown")
-        user_interactions[user_id].append(
-            (news_id, timestamp, category)
-        )
+        for news_id in news_ids:
+            category = news_category_map.get(news_id, "unknown")
+            user_interactions[user_id].append(
+                (news_id, timestamp, category)
+            )
 
     return user_interactions
 
-def build_id_mappings(user_interactions):
+def build_id_mappings(news_category_map):
     """
     Build integer ID mappings for news and categories.
     Padding index 0 is reserved.
     """
-    news_ids = set()
-    categories = set()
 
-    for interactions in user_interactions.values():
-        for news_id, _, category in interactions:
-            news_ids.add(news_id)
-            categories.add(category)
+    news_ids = list(news_category_map.keys())
+    categories = list(set(news_category_map.values()))
 
     news2idx = {nid: i + 1 for i, nid in enumerate(news_ids)}
     cat2idx  = {cat: i + 1 for i, cat in enumerate(categories)}
