@@ -23,7 +23,8 @@ def run_preprocessing_pipeline():
     return short_term_data, long_term_data, news2idx, category2idx
 
 def run_test_preprocessing_pipeline():
-    news2idx, category2idx = utils.load_train_mappings(os.path.join("data", "preprocessed", f"preprocessed_{pv.DATASET}_train"))
+    
+    news2idx, category2idx = utils.load_train_mappings(os.path.join("data", "preprocessed", f"preprocessed_{pv.DATASET}_train.pt"))
 
     news_category_map = load_news_categories(pv.TEST_NEWS)
     raw_interactions = load_user_interactions(
