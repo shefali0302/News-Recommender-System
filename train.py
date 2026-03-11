@@ -172,8 +172,8 @@ def train_model(train_short, train_long,
     )
 
 
-    best_score = 0
-    patience = 3
+    best_score = -float("inf")
+    patience = 5
     no_improve = 0
 
     user_ids = list(train_short.keys())
@@ -294,7 +294,7 @@ def train_model(train_short, train_long,
 
         current_score = val_metrics["NDCG@10"]
 
-        if current_score > best_score:
+        if current_score > best_score + 1e-4:
             best_score = current_score
             no_improve = 0
 
