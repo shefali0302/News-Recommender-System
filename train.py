@@ -9,6 +9,7 @@ import random
 import torch.optim as optim
 import path_variables as pv
 import pandas as pd
+import numpy as np
 from models.scoring import ItemScorer
 from models.short_term import ShortTermLTC
 from models.long_term import LongTermLTC
@@ -23,9 +24,19 @@ from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS, DEV_BEHAVIORS
 MODE = "full"
 # options: "full", "short_only", "long_only", "no_gate"
 BATCH_SIZE = 32
-NUM_EPOCHS = 15
+NUM_EPOCHS = 20
 LR=0.001
 
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(seed)
+
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
@@ -152,10 +163,10 @@ def train_model(train_short, train_long,
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
 
-    joint_embedding = JointEmbedding(num_news, num_categories, 64).to(device)
-    short_model = ShortTermLTC(joint_embedding, hidden_dim=64).to(device)
-    long_model = LongTermLTC(joint_embedding, hidden_dim=64).to(device)
-    fusion_gate = FusionGate(dim=64).to(device)
+    joint_embedding = JointEmbedding(num_news, num_categories, 100).to(device)
+    short_model = ShortTermLTC(joint_embedding, hidden_dim=100).to(device)
+    long_model = LongTermLTC(joint_embedding, hidden_dim=100).to(device)
+    fusion_gate = FusionGate(dim=100).to(device)
     scorer = ItemScorer(joint_embedding).to(device)
 
     optimizer = optim.Adam(
@@ -225,7 +236,7 @@ def train_model(train_short, train_long,
                 # -----------------------------
                 # Negative Sampling
                 # -----------------------------
-                K = 4   # you can try 4 or 9
+                K = 6  
                 negatives = []
                 while len(negatives) < K:
                     neg = random.choice(all_news_indices)
@@ -339,8 +350,8 @@ if __name__ == "__main__":
     dev_long = dev_data["long_term_data"]
 
     config = {
-        "embedding_dim": 64,
-        "hidden_dim": 64,
+        "embedding_dim": 100,
+        "hidden_dim": 100,
         "learning_rate": LR,
         "num_epochs": NUM_EPOCHS,
         "mode": MODE,
