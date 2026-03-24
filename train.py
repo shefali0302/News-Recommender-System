@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 # This is the main training script for the news recommendation system.
 # It loads the preprocessed data, initializes the models, and runs the training loop.
 # After training, it also runs a simple evaluation to check the performance of the model.
-# ----------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 import os
 import torch
 import random
@@ -23,11 +23,11 @@ from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS, DEV_BEHAVIORS
 
 MODE = "full"
 # options: "full", "short_only", "long_only", "no_gate"
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 NUM_EPOCHS = 20
-LR=0.001
+LR = 0.001
 
-seed = 42
+seed = 100
 random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
@@ -163,10 +163,10 @@ def train_model(train_short, train_long,
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
 
-    joint_embedding = JointEmbedding(num_news, num_categories, 100).to(device)
-    short_model = ShortTermLTC(joint_embedding, hidden_dim=100).to(device)
-    long_model = LongTermLTC(joint_embedding, hidden_dim=100).to(device)
-    fusion_gate = FusionGate(dim=100).to(device)
+    joint_embedding = JointEmbedding(num_news, num_categories, 128).to(device)
+    short_model = ShortTermLTC(joint_embedding, hidden_dim=128).to(device)
+    long_model = LongTermLTC(joint_embedding, hidden_dim=128).to(device)
+    fusion_gate = FusionGate(dim=128).to(device)
     scorer = ItemScorer(joint_embedding).to(device)
 
     optimizer = optim.Adam(
@@ -237,12 +237,34 @@ def train_model(train_short, train_long,
                 # Negative Sampling
                 # -----------------------------
                 K = 6  
-                negatives = []
-                while len(negatives) < K:
+                candidate_pool = []
+                while len(candidate_pool) < K * 5:
                     neg = random.choice(all_news_indices)
                     if neg not in user_clicked:
-                        negatives.append(neg)
+                        candidate_pool.append(neg)
 
+                with torch.no_grad():
+                    st_vec_tmp, _, _ = short_model(input_seq)
+                    lt_vec_tmp, _, _ = long_model(long_seq)
+
+                    if MODE == "short_only":
+                        user_vec_tmp = st_vec_tmp
+                    elif MODE == "long_only":
+                        user_vec_tmp = lt_vec_tmp
+                    elif MODE == "no_gate":
+                        user_vec_tmp = 0.5 * (st_vec_tmp + lt_vec_tmp)
+                    else:
+                        user_vec_tmp, _ = fusion_gate(st_vec_tmp, lt_vec_tmp)
+
+                    user_vec_tmp = user_vec_tmp.unsqueeze(0)
+
+                    scores_pool, _ = scorer(user_vec_tmp, [candidate_pool])
+                    scores_pool = scores_pool.squeeze(0)
+
+                _, top_indices = torch.topk(scores_pool, K)
+
+                negatives = [candidate_pool[i] for i in top_indices.tolist()]
+                
                 # Candidate set = 1 positive + K negatives
                 candidates = [positive_item] + negatives
                 random.shuffle(candidates)
@@ -350,8 +372,8 @@ if __name__ == "__main__":
     dev_long = dev_data["long_term_data"]
 
     config = {
-        "embedding_dim": 100,
-        "hidden_dim": 100,
+        "embedding_dim": 128,
+        "hidden_dim": 128,
         "learning_rate": LR,
         "num_epochs": NUM_EPOCHS,
         "mode": MODE,

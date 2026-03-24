@@ -29,10 +29,10 @@ if __name__ == "__main__":
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
 
-    joint_embedding = JointEmbedding(num_news, num_categories, 64).to(device)
-    short_model = ShortTermLTC(joint_embedding, hidden_dim=64).to(device)
-    long_model = LongTermLTC(joint_embedding, hidden_dim=64).to(device)
-    fusion_gate = FusionGate(dim=64).to(device)
+    joint_embedding = JointEmbedding(num_news, num_categories, 128).to(device)
+    short_model = ShortTermLTC(joint_embedding, hidden_dim=128).to(device)
+    long_model = LongTermLTC(joint_embedding, hidden_dim=128).to(device)
+    fusion_gate = FusionGate(dim=128).to(device)
     scorer = ItemScorer(joint_embedding).to(device)
 
     checkpoint = torch.load("best_model.pt", map_location=device)
