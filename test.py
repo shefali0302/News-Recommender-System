@@ -45,6 +45,17 @@ if __name__ == "__main__":
 
     print("Model loaded successfully.\n")
 
+    news_idx_to_cat = {}
+
+    for user in short_term_data:
+        for x in short_term_data[user]:
+            news_idx_to_cat[x[0]] = x[1]
+
+    for user in long_term_data:
+        for day, _ in long_term_data[user]:
+            for x in day:
+                news_idx_to_cat[x[0]] = x[1]
+
     metrics = evaluate_model(
         short_model,
         long_model,
@@ -54,7 +65,8 @@ if __name__ == "__main__":
         long_term_data,
         MODE="full",
         behaviors_path=pv.TEST_BEHAVIORS,
-        news2idx=news2idx
+        news2idx=news2idx,
+        news_idx_to_cat=news_idx_to_cat
     )
 
     print("========== TEST METRICS ==========")

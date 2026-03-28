@@ -48,7 +48,7 @@ def load_data(path):
 
 def evaluate_model(short_model, long_model, fusion_gate, scorer,
                    short_term_data, long_term_data, MODE,
-                   behaviors_path, news2idx):
+                   behaviors_path, news2idx, news_idx_to_cat):
 
     behaviors_df = pd.read_csv(
         behaviors_path,
@@ -133,7 +133,21 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             user_vec = user_vec.unsqueeze(0)
 
             # Score candidates
-            scores, _ = scorer(user_vec, [candidates])
+            # build category list
+            candidate_cats = []
+
+            for n in candidates:
+                # fallback safe lookup
+                if n in news_idx_to_cat:
+                    candidate_cats.append(news_idx_to_cat[n])
+                else:
+                    candidate_cats.append(0)  # padding safety
+
+            scores, _ = scorer(
+                user_vec,
+                [candidates],
+                [candidate_cats]
+            )
             scores = scores.squeeze(0)
 
             # Rank computation
@@ -155,30 +169,30 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
         "AUC": sum(auc_list) / max(1, len(auc_list))
     }
 
+
+
 def train_model(train_short, train_long,
                 val_short, val_long,
                 news2idx, category2idx,
-                num_epochs):
+                num_epochs, news_idx_to_cat, cat_to_news):
 
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
+    news_dim = 112
+    category_dim = 16
 
-    joint_embedding = JointEmbedding(num_news, num_categories, 128).to(device)
+    joint_embedding = JointEmbedding(num_news, num_categories, news_dim = news_dim, category_dim = category_dim).to(device)
     short_model = ShortTermLTC(joint_embedding, hidden_dim=128).to(device)
     long_model = LongTermLTC(joint_embedding, hidden_dim=128).to(device)
     fusion_gate = FusionGate(dim=128).to(device)
     scorer = ItemScorer(joint_embedding).to(device)
 
     optimizer = optim.Adam(
-        {
-            p for p in (
-                list(joint_embedding.parameters())+
-                list(short_model.parameters()) +
-                list(long_model.parameters()) +
-                list(fusion_gate.parameters()) +
-                list(scorer.parameters())
-            )
-        },
+        list(joint_embedding.parameters())+
+        list(short_model.parameters()) +
+        list(long_model.parameters()) +
+        list(fusion_gate.parameters()) +
+        list(scorer.parameters()),
         lr=LR
     )
 
@@ -211,6 +225,7 @@ def train_model(train_short, train_long,
             batch_st = []
             batch_lt = []
             batch_candidates = []
+            batch_candidate_categories = []
             batch_targets = []
 
             for user_id in batch_users:
@@ -236,13 +251,34 @@ def train_model(train_short, train_long,
                 # -----------------------------
                 # Negative Sampling
                 # -----------------------------
-                K = 6  
+
+                K = 6
+                POOL_SIZE = 50
                 candidate_pool = []
-                while len(candidate_pool) < K * 5:
+
+                # --- 1. same-category negatives ---
+                pos_cat = news_idx_to_cat.get(positive_item, 0)
+                
+                same_cat_pool = cat_to_news.get(pos_cat, [])
+
+                same_cat_negs = []
+                for neg in same_cat_pool:
+                    if neg not in user_clicked and neg != positive_item:
+                        same_cat_negs.append(neg)
+                    if len(same_cat_negs) >= POOL_SIZE // 2:
+                        break
+
+                # --- 2. random negatives ---
+                random_negs = []
+                while len(random_negs) < POOL_SIZE // 2:
                     neg = random.choice(all_news_indices)
                     if neg not in user_clicked:
-                        candidate_pool.append(neg)
-
+                        random_negs.append(neg)
+                
+                candidate_pool = random_negs + same_cat_negs
+                candidate_poool = list(set(candidate_pool))  
+                random.shuffle(candidate_pool)
+                                
                 with torch.no_grad():
                     st_vec_tmp, _, _ = short_model(input_seq)
                     lt_vec_tmp, _, _ = long_model(long_seq)
@@ -258,10 +294,12 @@ def train_model(train_short, train_long,
 
                     user_vec_tmp = user_vec_tmp.unsqueeze(0)
 
-                    scores_pool, _ = scorer(user_vec_tmp, [candidate_pool])
+                    candidate_category_pool = [news_idx_to_cat.get(idx, 0) for idx in candidate_pool]
+                    scores_pool, _ = scorer(user_vec_tmp, [candidate_pool], [candidate_category_pool])
                     scores_pool = scores_pool.squeeze(0)
 
-                _, top_indices = torch.topk(scores_pool, K)
+                top_k = min(K, len(candidate_pool));
+                _, top_indices = torch.topk(scores_pool, top_k)
 
                 negatives = [candidate_pool[i] for i in top_indices.tolist()]
                 
@@ -270,16 +308,18 @@ def train_model(train_short, train_long,
                 random.shuffle(candidates)
 
                 clicked_index = candidates.index(positive_item)
+                candidate_categories = [news_idx_to_cat.get(n, 0) for n in candidates]
 
                 # -----------------------------
                 # Compute user representation
                 # -----------------------------
-                st_vec, _, _ = short_model(input_seq)
-                lt_vec, _, _ = long_model(long_seq)
+                st_vec = st_vec_tmp
+                lt_vec = lt_vec_tmp
 
                 batch_st.append(st_vec)
                 batch_lt.append(lt_vec)
                 batch_candidates.append(candidates)
+                batch_candidate_categories.append(candidate_categories)
                 batch_targets.append(clicked_index)
 
             if len(batch_st) == 0:
@@ -297,15 +337,14 @@ def train_model(train_short, train_long,
             else:
                 user_vec, _ = fusion_gate(batch_st, batch_lt)
 
-            user_vec = user_vec.squeeze(1)
+            # user_vec = user_vec.squeeze(1)
 
-            scores, _ = scorer(user_vec, batch_candidates)
+            scores, _ = scorer(user_vec, batch_candidates, batch_candidate_categories)
 
-            loss = 0
-            for i in range(len(batch_targets)):
-                loss += compute_loss(scores[i], batch_targets[i])
-
-            loss = loss / len(batch_targets)
+            loss = torch.stack([
+                compute_loss(scores[i], batch_targets[i])
+                for i in range(len(batch_targets))
+            ]).mean()
 
             optimizer.zero_grad()
             loss.backward()
@@ -320,7 +359,8 @@ def train_model(train_short, train_long,
             fusion_gate, scorer,
             val_short, val_long, MODE,
             pv.DEV_BEHAVIORS,
-            news2idx
+            news2idx,
+            news_idx_to_cat
         )
 
         print("Validation:", val_metrics)
@@ -384,15 +424,41 @@ if __name__ == "__main__":
     }
 
     exp_dir = create_experiment_folder(config)
+
+    # Build news_idx → category_idx mapping
+    news_idx_to_cat = {}
+
+    for user in train_short:
+        for x in train_short[user]:
+            news_idx = x[0]
+            cat_idx = x[1]
+            news_idx_to_cat[news_idx] = cat_idx
+
+    for user in train_long:
+        for day, _ in train_long[user]:
+            for x in day:
+                news_idx = x[0]
+                cat_idx = x[1]
+                news_idx_to_cat[news_idx] = cat_idx
     
+    from collections import defaultdict
+    cat_to_news = defaultdict(list)
+
+    for n, c in news_idx_to_cat.items():
+        cat_to_news[c].append(n)
+
     short_model, long_model, fusion_gate, scorer = train_model(
         train_short, train_long,
         dev_short, dev_long,
         news2idx, category2idx,
-        num_epochs=NUM_EPOCHS
+        num_epochs=NUM_EPOCHS,
+        news_idx_to_cat = news_idx_to_cat,
+        cat_to_news = cat_to_news
     )
 
     print("\nFinal Evaluation on Dev Set")
+
+   
 
     test_metrics = evaluate_model(
         short_model,
@@ -403,7 +469,8 @@ if __name__ == "__main__":
         dev_long,
         MODE,
         pv.DEV_BEHAVIORS,
-        news2idx
+        news2idx,
+        news_idx_to_cat
     )
 
     with open(os.path.join(exp_dir, "final_metrics.txt"), "w") as f:

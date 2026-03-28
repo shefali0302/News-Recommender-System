@@ -10,12 +10,13 @@ import torch.nn as nn
 class ItemScorer(nn.Module):
     def __init__(self, joint_embedding):
         super().__init__()
-        self.news_embedding = joint_embedding.news_embedding
+        self.joint_embedding = joint_embedding
 
-    def forward(self, user_vec, candidate_news_ids):
+    def forward(self, user_vec, candidate_news_ids, candidate_cat_ids):
         """
         user_vec: (B, D) or (B, 1, D)
         candidate_news_ids: list of lists (len B)
+        candidate_cat_ids: list of lists (len B)
         """
 
         device = user_vec.device
@@ -33,16 +34,26 @@ class ItemScorer(nn.Module):
             dtype=torch.long,
             device=device
         )
+        padded_categories = torch.zeros(
+            batch_size, max_len,
+            dtype=torch.long,
+            device=device
+        )
 
-        for i, cand in enumerate(candidate_news_ids):
-            padded_candidates[i, :len(cand)] = torch.tensor(
-                cand,
+        for i, (candidate_news, candidate_category) in enumerate(zip(candidate_news_ids, candidate_cat_ids)):
+            padded_candidates[i, :len(candidate_news)] = torch.tensor(
+                candidate_news,
+                dtype=torch.long,
+                device=device
+            )
+            padded_categories[i, :len(candidate_category)] = torch.tensor(
+                candidate_category,
                 dtype=torch.long,
                 device=device
             )
 
         # ---- Get news embeddings ----
-        news_vecs = self.news_embedding(padded_candidates)  # (B, M, D)
+        news_vecs = self.joint_embedding(padded_candidates, padded_categories)  # (B, M, D)
 
         # ---- Ensure proper dims for bmm ----
         user_vec = user_vec.unsqueeze(-1)  # (B, D, 1)
