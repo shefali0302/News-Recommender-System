@@ -32,7 +32,7 @@ class LongTermEmbedding(nn.Module):
         """
         Args:
             long_term_sequence:[(daily_interactions, delta_t_days),...]
-            daily_interactions: [(news_idx, category_idx), ...]
+            daily_interactions: [(news_idx, category_idx, delta_t), ...]
         Returns:
             Z: Tensor of shape (M, D)   -> daily preference vectors
             delta_t: Tensor of shape (M,) -> time gap between days
@@ -65,13 +65,22 @@ class LongTermEmbedding(nn.Module):
             interaction_emb = self.embedding_layer(
                 news_ids, category_ids
             )  # (1, N_m, D)
-
-            interaction_emb = interaction_emb.squeeze(0)        # (N_m, D)
+            interaction_emb = interaction_emb.squeeze(0) # (N_m, D)
 
             # -------------------------------
-            # Mean pooling within the day
+            # Recency-weighted pooling 
             # -------------------------------
-            daily_vector = interaction_emb.mean(dim=0)          # (D,)
+            delta_t_list = torch.tensor(
+                [x[2] for x in daily_interactions],
+                dtype=torch.float32,
+                device=device
+            )  # (N_m,)
+            delta_t_list = torch.log1p(delta_t_list)  # log-transform to reduce skewness
+            weights = torch.exp(-delta_t_list)  # (N_m,)
+            weights = weights / (weights.sum() + 1e-8)  # (N_m,)
+            weights = weights.unsqueeze(-1)  # (N_m, 1)
+            daily_vector = torch.sum(interaction_emb*weights, dim = 0) # (D,)
+
             daily_vectors.append(daily_vector)
 
             day_gaps.append(delta_days)

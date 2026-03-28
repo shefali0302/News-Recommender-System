@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 
 from models.ltc_encoder import LTCEncoder
-from models.embeddings import JointEmbedding
 
 
 class ShortTermEmbedding(nn.Module):
@@ -31,7 +30,7 @@ class ShortTermEmbedding(nn.Module):
     def forward(self, short_term_sequence):
         """
         Args:
-            short_term_sequence:[(news_idx, category_idx, delta_t, mask),...]
+            short_term_sequence:[(news_idx, timestamp, category_idx, delta_t, mask),...]
         Returns:
             X: Tensor of shape (N, D)   -> masked interaction embeddings
             delta_t: Tensor of shape (N,) -> time gaps between interactions
@@ -45,19 +44,19 @@ class ShortTermEmbedding(nn.Module):
         ).unsqueeze(0) # (1, N)
 
         category_ids = torch.tensor(
-            [x[1] for x in short_term_sequence],
+            [x[2] for x in short_term_sequence],
             dtype=torch.long,
             device=device
         ).unsqueeze(0)  # (1, N)
 
         delta_t = torch.tensor(
-            [x[2] for x in short_term_sequence],
+            [x[3] for x in short_term_sequence],
             dtype=torch.float32,
             device=device
         )  # (N,)
 
         mask = torch.tensor(
-            [x[3] for x in short_term_sequence],
+            [x[4] for x in short_term_sequence],
             dtype=torch.float32,
             device=device
         ).unsqueeze(-1)  # (N, 1)
@@ -93,7 +92,7 @@ class ShortTermLTC(nn.Module):
     def forward(self, short_term_sequence):
         """
         Args:
-            short_term_sequence:[(news_idx, category_idx, delta_t, mask), ...]
+            short_term_sequence:[(news_idx, timestamp category_idx, delta_t, mask), ...]
         
         Returns:
             encoded: LTC encoded user representation of shape (hidden_dim,)

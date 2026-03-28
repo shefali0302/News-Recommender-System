@@ -5,7 +5,7 @@ def prepare_long_term_input(user_interactions_with_dt):
     """
     Prepare long-term input for the model.
     Args:
-        user_interactions_with_dt (dict): user_id -> [(news_id, timestamp, category, delta_t), ...]
+        user_interactions_with_dt (dict): user_id -> [(news_id, timestamp, cat_id, delta_t), ...]
     Returns:
         dict: user_id -> [(daily_interactions, delta_t_days),...]
     """
