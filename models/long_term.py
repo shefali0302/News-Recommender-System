@@ -21,7 +21,7 @@ class LongTermEmbedding(nn.Module):
     - Build daily preference sequence Z
     - Return (Z, delta_t_days) for LTC
     """
-    def __init__(self, joint_embedding):
+    def __init__(self, joint_embedding, lambda_val = 0.5):
         super().__init__()
         self.embedding_layer = joint_embedding
         self.output_dim = joint_embedding.news_dim + joint_embedding.category_dim
@@ -70,15 +70,23 @@ class LongTermEmbedding(nn.Module):
             # -------------------------------
             # Recency-weighted pooling 
             # -------------------------------
-            delta_t_list = torch.tensor(
-                [x[2] for x in daily_interactions],
-                dtype=torch.float32,
-                device=device
-            )  # (N_m,)
-            delta_t_list = torch.log1p(delta_t_list)  # log-transform to reduce skewness
-            weights = torch.exp(-delta_t_list)  # (N_m,)
-            weights = weights / (weights.sum() + 1e-8)  # (N_m,)
+
+            # Position-based recency weighting
+            N_m = len(daily_interactions)
+            positions = torch.arange(N_m, device=device)
+
+            # distance from most recent
+            distance_from_recent = (N_m - 1) - positions
+
+            # compute weights
+            weights = torch.exp(-self.lambda_val * distance_from_recent.float())
+
+            # normalize
+            weights = weights / (weights.sum() + 1e-8)
+
+            # reshape for multiplication
             weights = weights.unsqueeze(-1)  # (N_m, 1)
+
             daily_vector = torch.sum(interaction_emb*weights, dim = 0) # (D,)
 
             daily_vectors.append(daily_vector)

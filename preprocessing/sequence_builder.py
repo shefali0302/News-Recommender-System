@@ -69,4 +69,16 @@ def build_user_interaction_sequences():
 
     print("\n========== SEQUENCE CONSTRUCTION END ==========\n")
 
+    print("\n===== DEBUG: SAMPLE USER INTERACTIONS =====")
+
+    for i, (user_id, interactions) in enumerate(user_interactions_with_dt.items()):
+        print("\nUser:", user_id)
+        print("Num interactions:", len(interactions))
+
+        for x in interactions[:5]:
+            print(x)
+
+        if i >= 2:
+            break
+
     return user_interactions_with_dt, news2idx, cat2idx
