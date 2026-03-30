@@ -16,7 +16,21 @@ def prepare_long_term_input(user_interactions_with_dt):
 
     # Order daily chunks and compute time gaps
     print("Building daily chunk sequences with day-level time gaps...")
-    long_term_sequences = build_daily_chunk_sequence(user_daily_chunks)    
+    long_term_sequences = build_daily_chunk_sequence(user_daily_chunks)   
+
+    print("\n===== DEBUG: LONG TERM SAMPLE =====")
+
+    for i, (user_id, seq) in enumerate(long_term_sequences.items()):
+        print("\nUser:", user_id)
+        print("Num days:", len(seq))
+
+        for day_data in seq[:3]:
+            daily_interactions, delta_days = day_data
+            print("Delta days:", delta_days)
+            print("Interactions:", daily_interactions[:3])
+
+        if i >= 2:
+            break
 
     return long_term_sequences
 

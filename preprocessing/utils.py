@@ -27,6 +27,8 @@ def compute_dominant_categories(recent_interactions, alpha):
         cat for cat, count in freq.items()
         if count >= theta
     ]
+    if len(dominant_categories) == 0:
+        dominant_categories = [max(freq, key=freq.get)]  # fallback to most frequent category
 
     return dominant_categories #returns list of dominant categories
 
@@ -94,7 +96,7 @@ def chunk_interactions_by_day(user_interactions_with_dt):
         for news_id, ts, cat_id, delta_t in interactions:
             day = ts.date()
             daily_chunks[day].append((news_id, ts, cat_id, delta_t))
-            
+
         for day in daily_chunks:
             daily_chunks[day].sort(key=lambda x: x[1])  # sort by timestamp
             daily_chunks[day] = [(news_id, cat_id, delta_t) for news_id, ts, cat_id, delta_t in daily_chunks[day]]
@@ -132,7 +134,7 @@ def build_daily_chunk_sequence(user_daily_chunks):
     return user_sequences
 
 def load_train_mappings(train_preprocessed_path):
-    data = torch.load(train_preprocessed_path)
+    data = torch.load(train_preprocessed_path, weights_only=False)
     return data["news2idx"], data["category2idx"]
 
 #for testing preprocessing pipeline

@@ -11,7 +11,7 @@ def split_preprocessed_pt(val_ratio=0.2, seed=42):
         raise ValueError("split.py should only be used for MINDsmall dataset.")
     
     print("Loading:", INPUT_PATH)
-    data = torch.load(INPUT_PATH)
+    data = torch.load(INPUT_PATH, weights_only=False)
 
     short_term_data = data["short_term_data"]
     long_term_data = data["long_term_data"]

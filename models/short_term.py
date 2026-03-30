@@ -49,11 +49,14 @@ class ShortTermEmbedding(nn.Module):
             device=device
         ).unsqueeze(0)  # (1, N)
 
-        delta_t = torch.tensor(
-            [x[3] for x in short_term_sequence],
-            dtype=torch.float32,
-            device=device
-        )  # (N,)
+        # -------------------------------
+        # Positional delta_t (FIX)
+        # -------------------------------
+
+        N = len(short_term_sequence)
+        positions = torch.arange(N, device=device)
+        distance_from_recent = (N - 1) - positions
+        delta_t = distance_from_recent.float()
 
         mask = torch.tensor(
             [x[4] for x in short_term_sequence],

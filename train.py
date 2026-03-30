@@ -276,7 +276,7 @@ def train_model(train_short, train_long,
                         random_negs.append(neg)
                 
                 candidate_pool = random_negs + same_cat_negs
-                candidate_poool = list(set(candidate_pool))  
+                candidate_pool = list(set(candidate_pool))  
                 random.shuffle(candidate_pool)
                                 
                 with torch.no_grad():
@@ -313,8 +313,8 @@ def train_model(train_short, train_long,
                 # -----------------------------
                 # Compute user representation
                 # -----------------------------
-                st_vec = st_vec_tmp
-                lt_vec = lt_vec_tmp
+                st_vec, _, _ = short_model(input_seq)
+                lt_vec, _, _ = long_model(long_seq)
 
                 batch_st.append(st_vec)
                 batch_lt.append(lt_vec)
