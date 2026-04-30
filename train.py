@@ -173,15 +173,15 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
 
 def train_model(train_short, train_long,
                 val_short, val_long,
-                news2idx, category2idx,
+                news2idx, category2idx, idx2news,
                 num_epochs, news_idx_to_cat, cat_to_news):
 
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
-    news_dim = 112
-    category_dim = 16
+    news_dim = 128
+    category_dim = 128
 
-    joint_embedding = JointEmbedding(num_news, num_categories, news_dim = news_dim, category_dim = category_dim).to(device)
+    joint_embedding = JointEmbedding(num_news, num_categories, news_dim = news_dim, category_dim = category_dim, idx2news=idx2news).to(device)
     short_model = ShortTermLTC(joint_embedding, hidden_dim=128).to(device)
     long_model = LongTermLTC(joint_embedding, hidden_dim=128).to(device)
     fusion_gate = FusionGate(dim=128).to(device)
@@ -407,6 +407,7 @@ if __name__ == "__main__":
     train_long = train_data["long_term_data"]
     news2idx = train_data["news2idx"]
     category2idx = train_data["category2idx"]
+    idx2news = train_data["idx2news"]
 
     dev_short = dev_data["short_term_data"]
     dev_long = dev_data["long_term_data"]
@@ -450,7 +451,7 @@ if __name__ == "__main__":
     short_model, long_model, fusion_gate, scorer = train_model(
         train_short, train_long,
         dev_short, dev_long,
-        news2idx, category2idx,
+        news2idx, category2idx, idx2news,
         num_epochs=NUM_EPOCHS,
         news_idx_to_cat = news_idx_to_cat,
         cat_to_news = cat_to_news

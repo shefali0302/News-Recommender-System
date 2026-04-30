@@ -94,9 +94,10 @@ def build_id_mappings(news_category_map):
     categories = list(set(news_category_map.values()))
 
     news2idx = {nid: i + 1 for i, nid in enumerate(news_ids)}
+    idx2news = {i + 1: nid for i, nid in enumerate(news_ids)}
     cat2idx  = {cat: i + 1 for i, cat in enumerate(categories)}
 
-    return news2idx, cat2idx
+    return news2idx, cat2idx, idx2news
 
 def map_interactions_to_indices(user_interactions, news2idx, cat2idx):
     """

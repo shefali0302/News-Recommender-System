@@ -11,7 +11,7 @@ import preprocessing.utils as utils
 
 def run_preprocessing_pipeline():
     # Build base interaction sequences
-    user_interactions_with_dt, news2idx, category2idx = build_user_interaction_sequences()
+    user_interactions_with_dt, news2idx, category2idx, idx2news = build_user_interaction_sequences()
 
     # Short-term
     short_term_data = run_short_term_preprocessing(N, alpha, user_interactions_with_dt)
@@ -20,11 +20,11 @@ def run_preprocessing_pipeline():
     long_term_data = run_long_term_preprocessing(user_interactions_with_dt)
 
 
-    return short_term_data, long_term_data, news2idx, category2idx
+    return short_term_data, long_term_data, news2idx, category2idx, idx2news
 
 def run_test_preprocessing_pipeline():
     
-    news2idx, category2idx = utils.load_train_mappings(os.path.join("data", "preprocessed", f"preprocessed_{pv.DATASET}_train.pt"))
+    news2idx, category2idx, idx2news = utils.load_train_mappings(os.path.join("data", "preprocessed", f"preprocessed_{pv.DATASET}_train.pt"))
 
     news_category_map = load_news_categories(pv.TEST_NEWS)
     raw_interactions = load_user_interactions(
@@ -55,12 +55,13 @@ if __name__ == "__main__":
 
     save_path = os.path.join("data", "preprocessed", f"preprocessed_{pv.DATASET}_{pv.MODE}.pt")
     if pv.MODE=="train":
-        short_term_data, long_term_data, news2idx, category2idx = run_preprocessing_pipeline()
+        short_term_data, long_term_data, news2idx, category2idx, idx2news  = run_preprocessing_pipeline()
         torch.save({
             "short_term_data": short_term_data,
             "long_term_data": long_term_data,
             "news2idx": news2idx,
-            "category2idx": category2idx
+            "category2idx": category2idx,
+            "idx2news": idx2news
         },  save_path)
 
     elif pv.MODE=="test":
