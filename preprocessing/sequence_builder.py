@@ -59,7 +59,7 @@ def build_user_interaction_sequences():
 
     user_interactions = load_user_interactions(TRAIN_BEHAVIORS, news_category_map)
     
-    news2idx, cat2idx = build_id_mappings(news_category_map)
+    news2idx, cat2idx, idx2news = build_id_mappings(news_category_map)
 
     user_interactions = map_interactions_to_indices(user_interactions, news2idx, cat2idx)
 
@@ -81,4 +81,4 @@ def build_user_interaction_sequences():
         if i >= 2:
             break
 
-    return user_interactions_with_dt, news2idx, cat2idx
+    return user_interactions_with_dt, news2idx, cat2idx, idx2news

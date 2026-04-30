@@ -135,7 +135,7 @@ def build_daily_chunk_sequence(user_daily_chunks):
 
 def load_train_mappings(train_preprocessed_path):
     data = torch.load(train_preprocessed_path, weights_only=False)
-    return data["news2idx"], data["category2idx"]
+    return data["news2idx"], data["category2idx"], data["idx2news"]
 
 #for testing preprocessing pipeline
 def map_to_existing_indices(user_interactions, news2idx, category2idx):
