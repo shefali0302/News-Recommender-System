@@ -6,7 +6,6 @@
 
 import torch
 import torch.nn as nn
-
 from models.ltc_encoder import LTCEncoder
 
 
@@ -16,23 +15,24 @@ class ShortTermEmbedding(nn.Module):
 
     Responsibilities:
     - Embedding lookup for recent interactions
-    - Apply hybrid mask
-    - Build masked interaction sequence X
+    - Apply time-aware weighting
+    - Build weighted interaction sequence X
     - Return (X, delta_t) for LTC
     """
 
     def __init__(self, joint_embedding):
         super().__init__()
         self.embedding_layer = joint_embedding
-        self.output_dim = joint_embedding.news_dim + joint_embedding.category_dim
+        self.output_dim = joint_embedding.output_dim
+        self.debug_done = False
 
     
     def forward(self, short_term_sequence):
         """
         Args:
-            short_term_sequence:[(news_idx, timestamp, category_idx, delta_t, mask),...]
+            short_term_sequence:[(news_idx, timestamp, category_idx, delta_t),...]
         Returns:
-            X: Tensor of shape (N, D)   -> masked interaction embeddings
+            X: Tensor of shape (N, D)   -> time-weighted interaction embeddings
             delta_t: Tensor of shape (N,) -> time gaps between interactions
         """
         device = next(self.parameters()).device
@@ -49,27 +49,29 @@ class ShortTermEmbedding(nn.Module):
             device=device
         ).unsqueeze(0)  # (1, N)
 
-        # -------------------------------
-        # Positional delta_t (FIX)
-        # -------------------------------
-
         N = len(short_term_sequence)
-        positions = torch.arange(N, device=device)
-        distance_from_recent = (N - 1) - positions
-        delta_t = distance_from_recent.float()
-
-        mask = torch.tensor(
-            [x[4] for x in short_term_sequence],
-            dtype=torch.float32,
-            device=device
-        ).unsqueeze(-1)  # (N, 1)
 
         # Embedding lookup
         emb = self.embedding_layer(news_ids, category_ids)  # (1, N, D)
         emb = emb.squeeze(0)                                # (N, D)
+        
+        delta_t = torch.tensor(
+            [x[3] for x in short_term_sequence],
+            dtype=torch.float32,
+            device=device
+        )
+        weights = torch.exp(-delta_t.clamp(max=50)).unsqueeze(-1)
+        weights = weights / (weights.sum() + 1e-8)
 
-        # Apply hybrid mask
-        X = emb * mask                                     # (N, D)
+        X = emb * weights 
+
+
+        if not self.debug_done:
+            print("\n===== SHORT TERM DEBUG =====")
+            print("delta_t:", delta_t[:5])
+            print("weights:", weights[:5])
+            print("X shape:", X.shape)
+            self.debug_done = True
 
         return X, delta_t
 
@@ -88,14 +90,14 @@ class ShortTermLTC(nn.Module):
 
         self.short_term_embedding = ShortTermEmbedding(joint_embedding)
 
-        embedding_dim = joint_embedding.news_dim + joint_embedding.category_dim
+        embedding_dim = joint_embedding.output_dim
         self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
 
     
     def forward(self, short_term_sequence):
         """
         Args:
-            short_term_sequence:[(news_idx, timestamp category_idx, delta_t, mask), ...]
+            short_term_sequence:[(news_idx, timestamp category_idx, delta_t), ...]
         
         Returns:
             encoded: LTC encoded user representation of shape (hidden_dim,)

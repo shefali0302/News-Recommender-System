@@ -6,8 +6,6 @@
 
 import torch
 import torch.nn as nn
-
-from models.embeddings import JointEmbedding
 from models.ltc_encoder import LTCEncoder
 
 
@@ -17,15 +15,15 @@ class LongTermEmbedding(nn.Module):
 
     Responsibilities:
     - Embedding lookup for interactions in each day
-    - Mean pooling within daily chunks
+    - Time-aware weighted pooling within each day
     - Build daily preference sequence Z
     - Return (Z, delta_t_days) for LTC
     """
-    def __init__(self, joint_embedding, lambda_val = 0.5):
+    def __init__(self, joint_embedding):
         super().__init__()
         self.embedding_layer = joint_embedding
-        self.output_dim = joint_embedding.news_dim + joint_embedding.category_dim
-
+        self.output_dim = joint_embedding.output_dim
+        self.debug_done = False
 
 
     def forward(self, long_term_sequence):
@@ -47,6 +45,8 @@ class LongTermEmbedding(nn.Module):
             # -------------------------------
             # Build ID tensors for one day
             # -------------------------------
+            if len(daily_interactions) == 0:
+                continue
             news_ids = torch.tensor(
                 [x[0] for x in daily_interactions],
                 dtype=torch.long,
@@ -68,46 +68,48 @@ class LongTermEmbedding(nn.Module):
             interaction_emb = interaction_emb.squeeze(0) # (N_m, D)
 
             # -------------------------------
-            # Recency-weighted pooling 
+            # Time aware pooling within the day
             # -------------------------------
+            delta_t = torch.tensor(
+                [x[2] for x in daily_interactions],
+                dtype=torch.float32,
+                device=device
+            )
 
-            # Position-based recency weighting
-            N_m = len(daily_interactions)
-            positions = torch.arange(N_m, device=device)
-
-            # distance from most recent
-            distance_from_recent = (N_m - 1) - positions
-
-            # compute weights
-            weights = torch.exp(-self.lambda_val * distance_from_recent.float())
-
-            # normalize
+            weights = torch.exp(-delta_t.clamp(max=50)).unsqueeze(-1)
             weights = weights / (weights.sum() + 1e-8)
 
-            # reshape for multiplication
-            weights = weights.unsqueeze(-1)  # (N_m, 1)
-
-            daily_vector = torch.sum(interaction_emb*weights, dim = 0) # (D,)
+            daily_vector = torch.sum(interaction_emb * weights, dim = 0) # (D,)
 
             daily_vectors.append(daily_vector)
 
             day_gaps.append(delta_days)
 
+            if not self.debug_done:
+                print("\n===== LONG TERM DEBUG =====")
+                print("interaction delta_t:", delta_t[:5])
+                print("weights:", weights[:5])
+                print("interaction_emb shape:", interaction_emb.shape)
+                self.debug_done = True
+        
         # -------------------------------
         # Build daily sequence
         # -------------------------------
+        if len(daily_vectors) == 0:
+            return None, None
         Z = torch.stack(daily_vectors, dim=0)                   # (M, D)
-        delta_t = torch.tensor(day_gaps, dtype=torch.float32, device=device)   # (M,)
+        delta_days_tensor  = torch.tensor(day_gaps, dtype=torch.float32, device=device)   # (M,)
 
-        return Z, delta_t
+
+        return Z, delta_days_tensor 
 
 class LongTermLTC(nn.Module):
     """
-    Complete short-term preference pipeline:
+    Complete long-term preference pipeline:
     - Embedding extraction
     - LTC encoding
     
-    Combines ShortTermModel and LTCEncoder in a single end-to-end module.
+    Combines LongTermEmbedding and LTCEncoder in a single end-to-end module.
     """
     
     def __init__(self, joint_embedding, hidden_dim: int = 64):
@@ -115,14 +117,16 @@ class LongTermLTC(nn.Module):
 
         self.long_term_embedding = LongTermEmbedding(joint_embedding)
 
-        embedding_dim = joint_embedding.news_dim + joint_embedding.category_dim
+        embedding_dim = joint_embedding.output_dim
         self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
 
 
     def forward(self, long_term_sequence):
-        Z, delta_t = self.long_term_embedding(long_term_sequence)
-        encoded = self.ltc_encoder(Z, delta_t)
+        Z, delta_days_tensor = self.long_term_embedding(long_term_sequence)
+        if Z is None:
+            return None, None, None
+        encoded = self.ltc_encoder(Z, delta_days_tensor)
         
-        return encoded, Z, delta_t
+        return encoded, Z, delta_days_tensor
 
 
