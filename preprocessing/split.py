@@ -17,6 +17,7 @@ def split_preprocessed_pt(val_ratio=0.2, seed=42):
     long_term_data = data["long_term_data"]
     news2idx = data["news2idx"]
     category2idx = data["category2idx"]
+    idx2news = data["idx2news"]
 
     # Get all users
     all_users = list(short_term_data.keys())
@@ -40,7 +41,8 @@ def split_preprocessed_pt(val_ratio=0.2, seed=42):
         "short_term_data": train_short,
         "long_term_data": train_long,
         "news2idx": news2idx,
-        "category2idx": category2idx
+        "category2idx": category2idx,
+        "idx2news": idx2news
     }, TRAIN_OUT)
 
     # Save validation
@@ -48,7 +50,8 @@ def split_preprocessed_pt(val_ratio=0.2, seed=42):
         "short_term_data": val_short,
         "long_term_data": val_long,
         "news2idx": news2idx,
-        "category2idx": category2idx
+        "category2idx": category2idx,
+        "idx2news": idx2news
     }, VAL_OUT)
 
     print("Split complete.")
