@@ -162,11 +162,14 @@ class JointEmbedding(nn.Module):
                 seq_vec.append(vec)
             bert_vectors.append(seq_vec)
 
-        bert_vectors = torch.tensor(
-            bert_vectors,
-            dtype = torch.float32,
-            device = device
-        )
+        # bert_vectors = torch.tensor(
+        #     bert_vectors,
+        #     dtype = torch.float32,
+        #     device = device
+        # )
+        bert_vectors = torch.from_numpy(
+            np.array(bert_vectors)
+        ).float().to(device)
 
         bert_proj = self.content_fc(bert_vectors)
 
