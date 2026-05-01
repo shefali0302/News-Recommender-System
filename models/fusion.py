@@ -17,23 +17,31 @@ class FusionGate(nn.Module):
         super(FusionGate, self).__init__()
 
         # Learnable parameters
-        self.ws = nn.Parameter(torch.randn(dim) * 0.01)
-        self.wl = nn.Parameter(torch.randn(dim) * 0.01)
-        self.b = nn.Parameter(torch.zeros(1))
-    
+        self.Ws = nn.Linear(dim, dim)
+        self.Wl = nn.Linear(dim, dim)
+        self.Wi = nn.Linear(dim, dim)
+        self.bias = nn.Parameter(torch.zeros(dim))
+
+
     def forward(self, st, lt):
         """
         st: (B, D)
         lt: (B, D)
+        Returns:
+            fused_user_vector: (B, D)
+            gt: (B, D) - gate values for interpretability
         """
-        # Compute gate score per user
-        gate_score = (
-            torch.matmul(st, self.ws) +
-            torch.matmul(lt, self.wl) +
-            self.b
-        )  # (B,)
 
-        gt = torch.sigmoid(gate_score).unsqueeze(-1)  # (B, 1)
+        interaction = st * lt  # (B, D)
+
+        gt = torch.sigmoid(
+            (self.Ws(st) +
+            self.Wl(lt) +
+            self.Wi(interaction) +
+            self.bias) 
+            / (st.shape[-1] ** 0.5)
+        ) # (B, D)
+
 
         fused_user_vector = gt * st + (1 - gt) * lt  # (B, D)
 

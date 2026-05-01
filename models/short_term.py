@@ -25,7 +25,8 @@ class ShortTermEmbedding(nn.Module):
         self.embedding_layer = joint_embedding
         self.output_dim = joint_embedding.output_dim
         self.debug_done = False
-
+        self.attn = nn.Linear(self.output_dim, 1)
+        
     
     def forward(self, short_term_sequence):
         """
@@ -60,16 +61,22 @@ class ShortTermEmbedding(nn.Module):
             dtype=torch.float32,
             device=device
         )
-        weights = torch.exp(-delta_t.clamp(max=50)).unsqueeze(-1)
+
+        delta_t = delta_t / 3600.0        # seconds → hours
+        delta_t = torch.log1p(delta_t)    # smooth scaling
+        weights = torch.exp(-delta_t).unsqueeze(-1)
         weights = weights / (weights.sum() + 1e-8)
 
-        X = emb * weights 
-
+        attn_scores = self.attn(emb).squeeze(-1) # (N,)
+        attn_weights = torch.softmax(attn_scores, dim=0).unsqueeze(-1) # (N, 1)
+        combined_weights = weights * attn_weights
+        X = emb * combined_weights
 
         if not self.debug_done:
             print("\n===== SHORT TERM DEBUG =====")
             print("delta_t:", delta_t[:5])
             print("weights:", weights[:5])
+            print("attn_weights:", attn_weights[:5])
             print("X shape:", X.shape)
             self.debug_done = True
 
@@ -92,6 +99,7 @@ class ShortTermLTC(nn.Module):
 
         embedding_dim = joint_embedding.output_dim
         self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
+        self.post_attn = nn.Linear(hidden_dim, hidden_dim)
 
     
     def forward(self, short_term_sequence):
@@ -104,8 +112,17 @@ class ShortTermLTC(nn.Module):
             X: Tensor of shape (N, D) - masked interaction embeddings (for inspection)
             delta_t: Tensor of shape (N,) - time gaps (for inspection)
         """
+
+        if len(short_term_sequence) == 0:
+            return None, None, None
+        
         X, delta_t = self.short_term_embedding(short_term_sequence)
         encoded = self.ltc_encoder(X, delta_t)
+        if encoded.dim() == 1:
+            encoded = encoded.unsqueeze(0)
+
+        attn_weights = torch.sigmoid(self.post_attn(encoded))
+        encoded = encoded * attn_weights + encoded 
         
         return encoded, X, delta_t
     

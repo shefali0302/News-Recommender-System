@@ -24,6 +24,7 @@ class LongTermEmbedding(nn.Module):
         self.embedding_layer = joint_embedding
         self.output_dim = joint_embedding.output_dim
         self.debug_done = False
+        self.attn = nn.Linear(self.output_dim, 1)
 
 
     def forward(self, long_term_sequence):
@@ -76,7 +77,10 @@ class LongTermEmbedding(nn.Module):
                 device=device
             )
 
-            weights = torch.exp(-delta_t.clamp(max=50)).unsqueeze(-1)
+            delta_t = delta_t / 3600.0
+            delta_t = torch.log1p(delta_t)
+
+            weights = torch.exp(-delta_t).unsqueeze(-1)
             weights = weights / (weights.sum() + 1e-8)
 
             daily_vector = torch.sum(interaction_emb * weights, dim = 0) # (D,)
@@ -98,7 +102,16 @@ class LongTermEmbedding(nn.Module):
         if len(daily_vectors) == 0:
             return None, None
         Z = torch.stack(daily_vectors, dim=0)                   # (M, D)
+        attn_scores = self.attn(Z).squeeze(-1)  # (M,)
+        attn_weights = torch.softmax(attn_scores, dim=0).unsqueeze(-1)  # (M,1)
+        Z = Z * attn_weights + Z # (M, D)
+
         delta_days_tensor  = torch.tensor(day_gaps, dtype=torch.float32, device=device)   # (M,)
+
+        delta_days_tensor = torch.log1p(delta_days_tensor)
+
+        if not self.debug_done:
+            print("day attn_weights:", attn_weights[:5])
 
 
         return Z, delta_days_tensor 

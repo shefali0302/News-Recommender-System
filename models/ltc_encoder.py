@@ -52,8 +52,6 @@ class LTCEncoder(nn.Module):
         if delta_t.dim() == 1:
             delta_t = delta_t.unsqueeze(0)
 
-        # normalize delta_t for stability
-        delta_t = torch.log1p(delta_t)
 
         # append time gap feature
         delta_t = delta_t.unsqueeze(-1)  # (batch, seq, 1)

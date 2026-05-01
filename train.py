@@ -120,6 +120,12 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
             st_vec, _, _ = short_model(short_seq)
             lt_vec, _, _ = long_model(long_seq)
 
+            if st_vec is None or lt_vec is None:
+                continue
+
+            st_vec = st_vec.squeeze(0)
+            lt_vec = lt_vec.squeeze(0)
+
             if MODE == "short_only":
                 user_vec = st_vec
             elif MODE == "long_only":
@@ -283,6 +289,12 @@ def train_model(train_short, train_long,
                     st_vec_tmp, _, _ = short_model(input_seq)
                     lt_vec_tmp, _, _ = long_model(long_seq)
 
+                    if st_vec_tmp is None or lt_vec_tmp is None:
+                        continue
+
+                    st_vec_tmp = st_vec_tmp.squeeze(0)
+                    lt_vec_tmp = lt_vec_tmp.squeeze(0)
+
                     if MODE == "short_only":
                         user_vec_tmp = st_vec_tmp
                     elif MODE == "long_only":
@@ -316,6 +328,12 @@ def train_model(train_short, train_long,
                 st_vec, _, _ = short_model(input_seq)
                 lt_vec, _, _ = long_model(long_seq)
 
+                if st_vec is None or lt_vec is None:
+                    continue
+
+                st_vec = st_vec.squeeze(0)
+                lt_vec = lt_vec.squeeze(0)
+
                 batch_st.append(st_vec)
                 batch_lt.append(lt_vec)
                 batch_candidates.append(candidates)
@@ -348,6 +366,14 @@ def train_model(train_short, train_long,
 
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                list(joint_embedding.parameters()) +
+                list(short_model.parameters()) +
+                list(long_model.parameters()) +
+                list(fusion_gate.parameters()) +
+                list(scorer.parameters()),
+                5.0
+            )
             optimizer.step()
 
             total_loss += loss.item()
