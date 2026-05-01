@@ -11,6 +11,7 @@ class ItemScorer(nn.Module):
     def __init__(self, joint_embedding):
         super().__init__()
         self.joint_embedding = joint_embedding
+        self.user_proj = nn.Linear(128, 384)
 
     def forward(self, user_vec, candidate_news_ids, candidate_cat_ids):
         """
@@ -56,6 +57,7 @@ class ItemScorer(nn.Module):
         news_vecs = self.joint_embedding(padded_candidates, padded_categories)  # (B, M, D)
 
         # ---- Ensure proper dims for bmm ----
+        user_vec = self.user_proj(user_vec) # (B, D)
         user_vec = user_vec.unsqueeze(-1)  # (B, D, 1)
 
         scores = torch.bmm(news_vecs, user_vec).squeeze(-1)  # (B, M)
