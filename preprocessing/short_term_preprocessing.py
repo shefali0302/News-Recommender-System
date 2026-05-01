@@ -1,4 +1,4 @@
-from preprocessing.utils import get_last_n_interactions, compute_dominant_categories,   compute_time_thresholds, apply_time_mask, apply_category_mask, apply_hybrid_mask
+from preprocessing.utils import get_last_n_interactions
 
 
 def run_short_term_preprocessing(N, alpha, user_interactions_with_dt):
@@ -16,58 +16,9 @@ def run_short_term_preprocessing(N, alpha, user_interactions_with_dt):
     print("Sample user:", sample_user)
     print("Interactions:", user_recent_interactions[sample_user])
 
-    
-    # Detect Dominant Categories    
-    print(f"Detecting dominant categories (alpha={alpha})...")
-    user_dominant_categories = {}
-    for user_id, interactions in user_recent_interactions.items():
-        user_dominant_categories[user_id] = set(
-            compute_dominant_categories(interactions, alpha)
-        )
-
-    print("\nDEBUG: Dominant categories")
-    print("Sample:", list(user_dominant_categories.items())[:3])
-
-    
-    # Compute Time Thresholds (τ)    
-    print("Computing percentile-based time thresholds...")
-    tau_50, tau_75 = compute_time_thresholds(user_interactions_with_dt)
-
-    # print(f"τ50 (median Δt): {tau_50:.2f} seconds")
-    # print(f"τ75 (75th percentile Δt): {tau_75:.2f} seconds")
-
-    tau = tau_50  # conservative default
-    print(f"Selected τ = {tau:.2f} seconds")
-
-    
-    # Apply Time Mask    
-    print("Applying time-based mask...")
-    user_time_masked = apply_time_mask(user_recent_interactions, tau)
-
-    print("\nDEBUG: After time mask")
-    sample_user = next(iter(user_time_masked))
-    print(user_time_masked[sample_user])
-
-    
-    # Apply Category Mask    
-    print("Applying category-based mask...")
-    user_category_masked = apply_category_mask(user_time_masked, user_dominant_categories)
-
-    print("\nDEBUG: After category mask")
-    sample_user = next(iter(user_category_masked))
-    print(user_category_masked[sample_user])
-
-    
-    # Apply Hybrid Mask    
-    print("Applying hybrid (time × category) mask...")
-    user_hybrid_masked = apply_hybrid_mask(user_category_masked)
-
-    print("\nDEBUG: Final short-term output")
-    sample_user = next(iter(user_hybrid_masked))
-    print(user_hybrid_masked[sample_user])
 
     print("========== SHORT-TERM PREPROCESSING END ==========\n")
 
-    return user_hybrid_masked
+    return user_recent_interactions
 
 
