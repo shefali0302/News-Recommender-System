@@ -12,24 +12,32 @@ from train import evaluate_model
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
 from path_variables import DATASET, TEST_NEWS, TEST_BEHAVIORS
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 print("Using device:", device)
 
 if __name__ == "__main__":
-    test_data = torch.load(pv.MIND_SMALL_PREPROCESSED_TEST)
+    test_data = torch.load(pv.MIND_SMALL_PREPROCESSED_TEST, weights_only=False)
 
     short_term_data = test_data["short_term_data"]
     long_term_data = test_data["long_term_data"]
 
-    train_data = torch.load(pv.MIND_SMALL_PREPROCESSED_TRAIN)
+    train_data = torch.load(pv.MIND_SMALL_PREPROCESSED_TRAIN, weights_only=False)
 
     news2idx = train_data["news2idx"]
     category2idx = train_data["category2idx"]
+    idx2news= train_data["idx2news"]
 
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
 
-    joint_embedding = JointEmbedding(num_news, num_categories, 128).to(device)
+    joint_embedding = JointEmbedding(
+        num_news,
+        num_categories,
+        news_dim=128,
+        category_dim=128,
+        idx2news=idx2news
+    ).to(device)
     short_model = ShortTermLTC(joint_embedding, hidden_dim=128).to(device)
     long_model = LongTermLTC(joint_embedding, hidden_dim=128).to(device)
     fusion_gate = FusionGate(dim=128).to(device)
