@@ -25,7 +25,6 @@ class SimpleDataset(Dataset):
         # extract fields
         news_seq = [x[0] for x in input_seq]
         cat_seq  = [x[2] for x in input_seq]
-        delta_t  = [x[3] for x in input_seq]
         delta_t = [x[3] / 3600.0 for x in input_seq]   # seconds → hours
 
         pos_item = target[0]

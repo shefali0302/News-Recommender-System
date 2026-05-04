@@ -38,7 +38,7 @@ def get_bert_batch(news_ids):
             vec = bert_dict.get(int(nid), np.zeros(BERT_DIM))
             seq_vec.append(vec)
         batch.append(seq_vec)
-    return torch.tensor(batch, dtype=torch.float32)
+    return torch.from_numpy(np.array(batch)).float()
 
 
 # ==========================================
@@ -218,5 +218,6 @@ def train(model, dataloader):
             total_loss += loss.item()
 
         print(f"Epoch {epoch+1} Loss: {total_loss:.4f}")
-
+    
+    torch.save(model.state_dict(), "lohitha_model.pt")
     print("✅ Training Done")
