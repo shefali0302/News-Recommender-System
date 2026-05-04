@@ -4,6 +4,7 @@ import pandas as pd
 import path_variables as pv
 
 from Logitha_LTC_Bert_Timeawarefusion import NewsRecModel, get_bert_batch
+from training.metrics import compute_mrr, compute_ndcg, compute_auc
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
@@ -53,21 +54,6 @@ behaviors_df = pd.read_csv(
     names=["impression_id", "user_id", "time", "history", "impressions"]
 )
 
-# =========================
-# METRICS
-# =========================
-def compute_mrr(rank):
-    return 0 if rank is None else 1.0 / rank
-
-def compute_ndcg(rank, k):
-    if rank is None or rank > k:
-        return 0
-    return 1.0 / np.log2(rank + 1)
-
-def compute_auc(scores, clicked_index):
-    pos = scores[clicked_index]
-    neg = np.concatenate([scores[:clicked_index], scores[clicked_index+1:]])
-    return np.mean(pos > neg)
 
 # =========================
 # EVALUATION
@@ -78,7 +64,9 @@ mrr_list, ndcg5_list, ndcg10_list, auc_list = [], [], [], []
 
 with torch.no_grad():
     for i, row in behaviors_df.iterrows():
-
+        
+        if i > 5000:
+                break
         if i%1000 == 0:
             print(f"Processed {i} rows")
 
@@ -139,9 +127,9 @@ with torch.no_grad():
             score = torch.dot(user_vec.squeeze(), item_vec).item()
             scores.append(score)
 
-        scores = np.array(scores)
+        scores = torch.tensor(scores)
 
-        rank = np.argsort(-scores).tolist().index(clicked_index) + 1
+        rank = torch.argsort(scores, descending=True).tolist().index(clicked_index) + 1
 
         mrr_list.append(compute_mrr(rank))
         ndcg5_list.append(compute_ndcg(rank, 5))
