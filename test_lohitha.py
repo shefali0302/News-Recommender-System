@@ -124,7 +124,6 @@ with torch.no_grad():
         if clicked_index is None or len(candidates) == 0:
             continue
 
-        # compute scores
         scores = []
         for nid in candidates:
             nid_tensor = torch.tensor([[nid]]).to(device)
@@ -132,7 +131,10 @@ with torch.no_grad():
 
             content_vec = get_bert_batch(nid_tensor.cpu().numpy()).to(device)
 
-            item_vec = model.encoder(nid_tensor, cat_tensor, content_vec).squeeze()
+            item_full = model.encoder(nid_tensor, cat_tensor, content_vec).squeeze()
+
+            # 🔥 PROJECT ITEM TO 128-D (MATCH USER)
+            item_vec = item_full[:128]
 
             score = torch.dot(user_vec.squeeze(), item_vec).item()
             scores.append(score)
