@@ -104,7 +104,7 @@ class LongTermEmbedding(nn.Module):
         Z = torch.stack(daily_vectors, dim=0)                   # (M, D)
         attn_scores = self.attn(Z).squeeze(-1)  # (M,)
         attn_weights = torch.softmax(attn_scores, dim=0).unsqueeze(-1)  # (M,1)
-        Z = Z * attn_weights + Z # (M, D)
+        Z = Z * attn_weights # (M, D)
 
         delta_days_tensor  = torch.tensor(day_gaps, dtype=torch.float32, device=device)   # (M,)
 

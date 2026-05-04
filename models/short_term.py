@@ -122,7 +122,7 @@ class ShortTermLTC(nn.Module):
             encoded = encoded.unsqueeze(0)
 
         attn_weights = torch.sigmoid(self.post_attn(encoded))
-        encoded = encoded * attn_weights + encoded 
+        encoded = encoded * attn_weights  
         
         return encoded, X, delta_t
     
