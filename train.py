@@ -258,8 +258,8 @@ def train_model(train_short, train_long,
                 # Negative Sampling
                 # -----------------------------
 
-                K = 6
-                POOL_SIZE = 50
+                K = 10
+                POOL_SIZE = 100
                 candidate_pool = []
 
                 # --- 1. same-category negatives ---
