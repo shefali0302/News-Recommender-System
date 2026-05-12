@@ -84,6 +84,54 @@ def load_user_interactions(behaviors_path, news_category_map):
 
     return user_interactions
 
+def build_impression_negative_map(behaviors_path, news2idx):
+
+    behaviors_df = pd.read_csv(
+        behaviors_path,
+        sep="\t",
+        header=None,
+        names=[
+            "impression_id",
+            "user_id",
+            "time",
+            "history",
+            "impressions"
+        ]
+    )
+
+    impression_negative_map = defaultdict(list)
+
+    for _, row in tqdm(behaviors_df.iterrows(), total=len(behaviors_df)):
+
+        impressions = row["impressions"]
+
+        if pd.isna(impressions):
+            continue
+
+        impression_pairs = impressions.split(" ")
+
+        positives = []
+        negatives = []
+
+        for pair in impression_pairs:
+
+            news_id, label = pair.split("-")
+
+            if news_id not in news2idx:
+                continue
+
+            news_idx = news2idx[news_id]
+
+            if label == "1":
+                positives.append(news_idx)
+            else:
+                negatives.append(news_idx)
+
+        for pos in positives:
+            impression_negative_map[pos].extend(negatives)
+
+    return impression_negative_map
+
 def build_id_mappings(news_category_map):
     """
     Build integer ID mappings for news and categories.

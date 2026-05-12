@@ -23,7 +23,7 @@ from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS, DEV_BEHAVIORS
 
 MODE = "full"
 # options: "full", "short_only", "long_only", "no_gate"
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 NUM_EPOCHS = 20
 LR = 0.001
 
@@ -180,7 +180,7 @@ def evaluate_model(short_model, long_model, fusion_gate, scorer,
 def train_model(train_short, train_long,
                 val_short, val_long,
                 news2idx, category2idx, idx2news,
-                num_epochs, news_idx_to_cat, cat_to_news):
+                num_epochs, news_idx_to_cat, cat_to_news, impression_negative_map):
 
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
@@ -275,13 +275,44 @@ def train_model(train_short, train_long,
                         break
 
                 # --- 2. random negatives ---
-                random_negs = []
-                while len(random_negs) < POOL_SIZE // 2:
-                    neg = random.choice(all_news_indices)
-                    if neg not in user_clicked:
-                        random_negs.append(neg)
+                # random_negs = []
+                # while len(random_negs) < POOL_SIZE // 2:
+                #     neg = random.choice(all_news_indices)
+                #     if neg not in user_clicked:
+                #         random_negs.append(neg)
+
+                # --- 2. impression negatives ---
+
+                impression_negs = impression_negative_map.get(
+                    positive_item,
+                    []
+                )
+
+                filtered_impression_negs = []
+
+                for neg in impression_negs:
+
+                    if neg not in user_clicked and neg != positive_item:
+                        filtered_impression_negs.append(neg)
+
+                # sample from impression negatives
+                if len(filtered_impression_negs) > POOL_SIZE // 2:
+                    impression_negs_sampled = random.sample(
+                        filtered_impression_negs,
+                        POOL_SIZE // 2
+                    )
+                else:
+                    impression_negs_sampled = filtered_impression_negs
                 
-                candidate_pool = random_negs + same_cat_negs
+                candidate_pool = same_cat_negs + impression_negs_sampled
+
+                while len(candidate_pool) < POOL_SIZE:
+
+                    neg = random.choice(all_news_indices)
+
+                    if neg not in user_clicked and neg != positive_item:
+                        candidate_pool.append(neg)
+
                 candidate_pool = list(set(candidate_pool))  
                 random.shuffle(candidate_pool)
                                 
@@ -434,6 +465,7 @@ if __name__ == "__main__":
     news2idx = train_data["news2idx"]
     category2idx = train_data["category2idx"]
     idx2news = train_data["idx2news"]
+    impression_negative_map = train_data["impression_negative_map"]
 
     dev_short = dev_data["short_term_data"]
     dev_long = dev_data["long_term_data"]
@@ -480,7 +512,8 @@ if __name__ == "__main__":
         news2idx, category2idx, idx2news,
         num_epochs=NUM_EPOCHS,
         news_idx_to_cat = news_idx_to_cat,
-        cat_to_news = cat_to_news
+        cat_to_news = cat_to_news,
+        impression_negative_map=impression_negative_map
     )
 
     print("\nFinal Evaluation on Dev Set")

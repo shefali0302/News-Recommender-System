@@ -7,11 +7,18 @@ from preprocessing.long_term_preprocessing import run_long_term_preprocessing
 from preprocessing.configs import N, alpha
 import path_variables as pv
 import preprocessing.utils as utils
+from preprocessing.dataset_ingestion import build_impression_negative_map
 
 
 def run_preprocessing_pipeline():
     # Build base interaction sequences
     user_interactions_with_dt, news2idx, category2idx, idx2news = build_user_interaction_sequences()
+
+    # Build impression negative map for training data
+    impression_negative_map = build_impression_negative_map(
+        pv.TRAIN_BEHAVIORS,
+        news2idx
+    )
 
     # Short-term
     short_term_data = run_short_term_preprocessing(N, alpha, user_interactions_with_dt)
@@ -20,7 +27,7 @@ def run_preprocessing_pipeline():
     long_term_data = run_long_term_preprocessing(user_interactions_with_dt)
 
 
-    return short_term_data, long_term_data, news2idx, category2idx, idx2news
+    return short_term_data, long_term_data, news2idx, category2idx, idx2news, impression_negative_map
 
 def run_test_preprocessing_pipeline():
     
@@ -55,13 +62,14 @@ if __name__ == "__main__":
 
     save_path = os.path.join("data", "preprocessed", f"preprocessed_{pv.DATASET}_{pv.MODE}.pt")
     if pv.MODE=="train":
-        short_term_data, long_term_data, news2idx, category2idx, idx2news  = run_preprocessing_pipeline()
+        short_term_data, long_term_data, news2idx, category2idx, idx2news, impression_negative_map  = run_preprocessing_pipeline()
         torch.save({
             "short_term_data": short_term_data,
             "long_term_data": long_term_data,
             "news2idx": news2idx,
             "category2idx": category2idx,
-            "idx2news": idx2news
+            "idx2news": idx2news,
+            "impression_negative_map": impression_negative_map
         },  save_path)
 
     elif pv.MODE=="test":
