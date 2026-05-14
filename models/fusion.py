@@ -43,7 +43,7 @@ class FusionGate(nn.Module):
         ) # (B, D)
 
 
-        fused_user_vector = gt * st + (1 - gt) * lt  # (B, D)
+        fused_user_vector = gt * st + (1 - gt) * lt + 0.1 * interaction  # (B, D)
 
         return fused_user_vector, gt
 
