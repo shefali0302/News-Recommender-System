@@ -63,36 +63,36 @@ class ItemScorer(nn.Module):
         news_vecs = self.joint_embedding(padded_candidates, padded_categories)  # (B, M, D)
 
         # ---- Ensure proper dims for bmm ----
-        # user_vec = self.user_proj(user_vec) # (B, D)
-        # user_vec = user_vec.unsqueeze(-1)  # (B, D, 1)
+        user_vec = self.user_proj(user_vec) # (B, D)
+        user_vec = user_vec.unsqueeze(-1)  # (B, D, 1)
 
-        # scores = torch.bmm(news_vecs, user_vec).squeeze(-1)  # (B, M)
-
-        # return scores, torch.softmax(scores, dim=1)
-        
-        # ---- Project user vectors ----
-        user_vec = self.user_proj(user_vec)  # (B, 384)
-
-        # Expand user vector for every candidate
-        user_expand = user_vec.unsqueeze(1).expand(
-            -1,
-            max_len,
-            -1
-        )  # (B, M, 384)
-
-        # Element-wise interaction
-        interaction = user_expand * news_vecs  # (B, M, 384)
-
-        # Concatenate features
-        combined = torch.cat([
-            user_expand,
-            news_vecs,
-            interaction
-        ], dim=-1)  # (B, M, 1152)
-
-        # MLP scoring
-        scores = self.scorer(combined).squeeze(-1)  # (B, M)
+        scores = torch.bmm(news_vecs, user_vec).squeeze(-1)  # (B, M)
 
         return scores, torch.softmax(scores, dim=1)
+        
+        # # ---- Project user vectors ----
+        # user_vec = self.user_proj(user_vec)  # (B, 384)
+
+        # # Expand user vector for every candidate
+        # user_expand = user_vec.unsqueeze(1).expand(
+        #     -1,
+        #     max_len,
+        #     -1
+        # )  # (B, M, 384)
+
+        # # Element-wise interaction
+        # interaction = user_expand * news_vecs  # (B, M, 384)
+
+        # # Concatenate features
+        # combined = torch.cat([
+        #     user_expand,
+        #     news_vecs,
+        #     interaction
+        # ], dim=-1)  # (B, M, 1152)
+
+        # # MLP scoring
+        # scores = self.scorer(combined).squeeze(-1)  # (B, M)
+
+        # return scores, torch.softmax(scores, dim=1)
 
 
