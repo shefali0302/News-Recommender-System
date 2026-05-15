@@ -23,7 +23,7 @@ from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS, DEV_BEHAVIORS
 
 MODE = "full"
 # options: "full", "short_only", "long_only", "no_gate"
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 NUM_EPOCHS = 20
 LR = 0.001
 
@@ -260,6 +260,13 @@ def train_model(train_short, train_long,
 
                 K = 10
                 POOL_SIZE = 100
+
+                IMPRESSION_RATIO = 0.7
+                CATEGORY_RATIO = 0.3
+
+                num_impression = int(POOL_SIZE * IMPRESSION_RATIO)
+                num_category = int(POOL_SIZE * CATEGORY_RATIO)
+
                 candidate_pool = []
 
                 # --- 1. same-category negatives ---
@@ -271,7 +278,7 @@ def train_model(train_short, train_long,
                 for neg in same_cat_pool:
                     if neg not in user_clicked and neg != positive_item:
                         same_cat_negs.append(neg)
-                    if len(same_cat_negs) >= POOL_SIZE // 2:
+                    if len(same_cat_negs) >= num_category:
                         break
 
                 # --- 2. random negatives ---
@@ -296,10 +303,10 @@ def train_model(train_short, train_long,
                         filtered_impression_negs.append(neg)
 
                 # sample from impression negatives
-                if len(filtered_impression_negs) > POOL_SIZE // 2:
+                if len(filtered_impression_negs) > num_impression:
                     impression_negs_sampled = random.sample(
                         filtered_impression_negs,
-                        POOL_SIZE // 2
+                        num_impression
                     )
                 else:
                     impression_negs_sampled = filtered_impression_negs
