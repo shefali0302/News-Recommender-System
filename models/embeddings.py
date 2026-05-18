@@ -98,11 +98,25 @@ class JointEmbedding(nn.Module):
         self.bert_dict = np.load(bert_path, allow_pickle=True).item()  
 
         self.bert_dim = 384
-        self.bert_proj_dim = 128 
+        # self.bert_proj_dim = 128 
+        # self.content_fc = nn.Linear(self.bert_dim, self.bert_proj_dim)
+        # self.output_dim = news_dim + category_dim + self.bert_proj_dim    
 
-        self.content_fc = nn.Linear(self.bert_dim, self.bert_proj_dim)
+        # Total concatenated dimension
+        self.concat_dim = (
+            news_dim +
+            category_dim +
+            self.bert_dim
+        )
 
-        self.output_dim = news_dim + category_dim + self.bert_proj_dim    
+        # Shared projection layer
+        self.projection = nn.Linear(
+            self.concat_dim,
+            256
+        )
+
+        # Final output dimension
+        self.output_dim = 256
 
 
 
@@ -167,29 +181,26 @@ class JointEmbedding(nn.Module):
         #     dtype = torch.float32,
         #     device = device
         # )
+
         bert_vectors = torch.from_numpy(
             np.array(bert_vectors)
         ).float().to(device)
 
-        bert_proj = self.content_fc(bert_vectors)
-
-        if not self.debug_done:  
-            print("\n===== DEBUG: BERT PROJECTION =====")
-            print("bert_vectors shape:", bert_vectors.shape)
-            print("bert_proj shape:", bert_proj.shape)
-            print("bert_proj variance:", bert_proj.var().item())
-            self.debug_done = True
-
-        joint_embeddings = torch.cat(
-            [news_vecs, category_vecs, bert_proj],
+        concat_embeddings = torch.cat(
+            [news_vecs, category_vecs, bert_vectors],
             dim=-1
+        )
+
+        joint_embeddings = self.projection(
+            concat_embeddings
         )
 
         if not self.debug_done:
             print("\n===== DEBUG: FINAL EMBEDDING =====")
             print("news_vecs shape:", news_vecs.shape)
             print("category_vecs shape:", category_vecs.shape)
-            print("bert_proj shape:", bert_proj.shape)
+            print("bert_vectors shape:", bert_vectors.shape)
+            print("concat_embeddings shape:", concat_embeddings.shape)
             print("joint_embeddings shape:", joint_embeddings.shape)
             self.debug_done = True
 
@@ -211,7 +222,7 @@ if __name__ == "__main__":
         num_news=num_news,
         num_categories=num_categories,
         news_dim=64,
-        category_dim=16
+        category_dim=32
     )
 
     news_ids = torch.randint(0, num_news, (batch_size, seq_len))
@@ -220,4 +231,3 @@ if __name__ == "__main__":
     embeddings = model(news_ids, category_ids)
 
     print("Embedding shape:", embeddings.shape)
-    # Expected: (2, 5, news_dim (128) + category_dim (128) + 128)

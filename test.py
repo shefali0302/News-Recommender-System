@@ -35,12 +35,12 @@ if __name__ == "__main__":
         num_news,
         num_categories,
         news_dim=128,
-        category_dim=128,
+        category_dim=32,
         idx2news=idx2news
     ).to(device)
-    short_model = ShortTermLTC(joint_embedding, hidden_dim=128).to(device)
-    long_model = LongTermLTC(joint_embedding, hidden_dim=128).to(device)
-    fusion_gate = FusionGate(dim=128).to(device)
+    short_model = ShortTermLTC(joint_embedding, hidden_dim=256).to(device)
+    long_model = LongTermLTC(joint_embedding, hidden_dim=256).to(device)
+    fusion_gate = FusionGate(dim=256).to(device)
     scorer = ItemScorer(joint_embedding).to(device)
 
     checkpoint = torch.load("best_model.pt", map_location=device)

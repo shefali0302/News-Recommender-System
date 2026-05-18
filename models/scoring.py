@@ -11,9 +11,9 @@ class ItemScorer(nn.Module):
     def __init__(self, joint_embedding):
         super().__init__()
         self.joint_embedding = joint_embedding
-        self.user_proj = nn.Linear(128, 384)
+        self.user_proj = nn.Linear(256, 256)
         self.scorer = nn.Sequential(
-            nn.Linear(384 * 3, 256),
+            nn.Linear(256 * 3, 256),
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(256, 1)
@@ -70,29 +70,4 @@ class ItemScorer(nn.Module):
 
         return scores, torch.softmax(scores, dim=1)
         
-        # # ---- Project user vectors ----
-        # user_vec = self.user_proj(user_vec)  # (B, 384)
-
-        # # Expand user vector for every candidate
-        # user_expand = user_vec.unsqueeze(1).expand(
-        #     -1,
-        #     max_len,
-        #     -1
-        # )  # (B, M, 384)
-
-        # # Element-wise interaction
-        # interaction = user_expand * news_vecs  # (B, M, 384)
-
-        # # Concatenate features
-        # combined = torch.cat([
-        #     user_expand,
-        #     news_vecs,
-        #     interaction
-        # ], dim=-1)  # (B, M, 1152)
-
-        # # MLP scoring
-        # scores = self.scorer(combined).squeeze(-1)  # (B, M)
-
-        # return scores, torch.softmax(scores, dim=1)
-
-
+ 

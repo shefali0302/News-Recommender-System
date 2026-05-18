@@ -185,12 +185,12 @@ def train_model(train_short, train_long,
     num_news = max(news2idx.values()) + 1
     num_categories = max(category2idx.values()) + 1
     news_dim = 128
-    category_dim = 128
+    category_dim = 32
 
     joint_embedding = JointEmbedding(num_news, num_categories, news_dim = news_dim, category_dim = category_dim, idx2news=idx2news).to(device)
-    short_model = ShortTermLTC(joint_embedding, hidden_dim=128).to(device)
-    long_model = LongTermLTC(joint_embedding, hidden_dim=128).to(device)
-    fusion_gate = FusionGate(dim=128).to(device)
+    short_model = ShortTermLTC(joint_embedding, hidden_dim=256).to(device)
+    long_model = LongTermLTC(joint_embedding, hidden_dim=256).to(device)
+    fusion_gate = FusionGate(dim=256).to(device)
     scorer = ItemScorer(joint_embedding).to(device)
 
     optimizer = optim.Adam(
@@ -479,7 +479,7 @@ if __name__ == "__main__":
 
     config = {
         "embedding_dim": 128,
-        "hidden_dim": 128,
+        "hidden_dim": 256,
         "learning_rate": LR,
         "num_epochs": NUM_EPOCHS,
         "mode": MODE,
