@@ -105,7 +105,9 @@ class ShortTermLTC(nn.Module):
         # self.post_attn = nn.Linear(hidden_dim, hidden_dim)
 
         self.self_attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=4, batch_first=True, dropout=0.1)
-        self.pooling = nn.Linear(hidden_dim, 1)
+        # self.pooling = nn.Linear(hidden_dim, 1)
+        self.Wa = nn.Linear(hidden_dim, hidden_dim)
+        self.va = nn.Linear(hidden_dim, 1, bias=False)
 
     
     def forward(self, short_term_sequence):
@@ -125,12 +127,28 @@ class ShortTermLTC(nn.Module):
         X, delta_t = self.short_term_embedding(short_term_sequence)
 
         encoded_seq =self.ltc_encoder(X, delta_t) # (1, N, 256)
-        attn_output, _ = self.self_attn(encoded_seq, encoded_seq, encoded_seq) # (1, N, 256)
+        attn_output, _ = self.self_attn(encoded_seq, encoded_seq, encoded_seq, need_weights=False) # (1, N, 256)
 
-        pool_scores = self.pooling(attn_output).squeeze(-1) # (1, N)
-        pool_weights = torch.softmax(pool_scores, dim=1).unsqueeze(-1) # (1, N, 1)
+        # pool_scores = self.pooling(attn_output).squeeze(-1) # (1, N)
+        # pool_weights = torch.softmax(pool_scores, dim=1).unsqueeze(-1) # (1, N, 1)
 
-        user_vector = torch.sum(attn_output * pool_weights, dim=1) # (1, 256)
+        # user_vector = torch.sum(attn_output * pool_weights, dim=1) # (1, 256)
+
+        attn_hidden = torch.tanh(
+            self.Wa(attn_output)
+        )  # (B, N, 256)
+
+        pool_scores = self.va(attn_hidden).squeeze(-1)  # (B, N)
+
+        pool_weights = torch.softmax(
+            pool_scores,
+            dim=1
+        ).unsqueeze(-1)  # (B, N, 1)
+
+        user_vector = torch.sum(
+            attn_output * pool_weights,
+            dim=1
+        )  # (B, 256)
 
         return user_vector, X, delta_t
     

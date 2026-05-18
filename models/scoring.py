@@ -64,9 +64,12 @@ class ItemScorer(nn.Module):
 
         # ---- Ensure proper dims for bmm ----
         user_vec = self.user_proj(user_vec) # (B, D)
-        user_vec = user_vec.unsqueeze(-1)  # (B, D, 1)
+        user_expand = user_vec.unsqueeze(1).expand(-1, news_vecs.size(1), -1)  # (B, M, D)
 
-        scores = torch.bmm(news_vecs, user_vec).squeeze(-1)  # (B, M)
+        interaction = user_expand * news_vecs  # (B, M, D)
+        combined = torch.cat([user_expand, news_vecs, interaction], dim=-1)
+
+        scores = self.scorer(combined).squeeze(-1)  # (B, M)
 
         return scores, torch.softmax(scores, dim=1)
         
