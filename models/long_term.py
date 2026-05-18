@@ -105,6 +105,7 @@ class LongTermEmbedding(nn.Module):
         attn_scores = self.attn(Z).squeeze(-1)  # (M,)
         attn_weights = torch.softmax(attn_scores, dim=0).unsqueeze(-1)  # (M,1)
         Z = Z * attn_weights # (M, D)
+        Z = Z / (attn_weights.sum() + 1e-8)
 
         delta_days_tensor  = torch.tensor(day_gaps, dtype=torch.float32, device=device)   # (M,)
 
@@ -133,13 +134,31 @@ class LongTermLTC(nn.Module):
         embedding_dim = joint_embedding.output_dim
         self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
 
+        self.self_attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=4, batch_first=True, dropout=0.1)
+        self.pooling = nn.Linear(hidden_dim, 1)
+
 
     def forward(self, long_term_sequence):
         Z, delta_days_tensor = self.long_term_embedding(long_term_sequence)
         if Z is None:
             return None, None, None
-        encoded = self.ltc_encoder(Z, delta_days_tensor)
+
+        encoded_seq = self.ltc_encoder(Z, delta_days_tensor)
+
+        attn_output, _ = self.self_attn(
+            encoded_seq,
+            encoded_seq,
+            encoded_seq
+        )
+
+        pool_scores = self.pooling(attn_output).squeeze(-1)
+        pool_weights = torch.softmax(pool_scores, dim=1).unsqueeze(-1)
+
+        user_vector = torch.sum(
+            attn_output * pool_weights,
+            dim=1
+        )
         
-        return encoded, Z, delta_days_tensor
+        return user_vector, Z, delta_days_tensor
 
 

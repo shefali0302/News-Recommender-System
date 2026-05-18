@@ -70,6 +70,9 @@ class ShortTermEmbedding(nn.Module):
         attn_scores = self.attn(emb).squeeze(-1) # (N,)
         attn_weights = torch.softmax(attn_scores, dim=0).unsqueeze(-1) # (N, 1)
         combined_weights = weights * attn_weights
+        combined_weights = combined_weights / (
+            combined_weights.sum() + 1e-8
+        )
         X = emb * combined_weights
 
         if not self.debug_done:
@@ -99,7 +102,10 @@ class ShortTermLTC(nn.Module):
 
         embedding_dim = joint_embedding.output_dim
         self.ltc_encoder = LTCEncoder(embedding_dim, hidden_dim)
-        self.post_attn = nn.Linear(hidden_dim, hidden_dim)
+        # self.post_attn = nn.Linear(hidden_dim, hidden_dim)
+
+        self.self_attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=4, batch_first=True, dropout=0.1)
+        self.pooling = nn.Linear(hidden_dim, 1)
 
     
     def forward(self, short_term_sequence):
@@ -117,13 +123,15 @@ class ShortTermLTC(nn.Module):
             return None, None, None
         
         X, delta_t = self.short_term_embedding(short_term_sequence)
-        encoded = self.ltc_encoder(X, delta_t)
-        if encoded.dim() == 1:
-            encoded = encoded.unsqueeze(0)
 
-        attn_weights = torch.sigmoid(self.post_attn(encoded))
-        encoded = encoded * attn_weights  
-        
-        return encoded, X, delta_t
+        encoded_seq =self.ltc_encoder(X, delta_t) # (1, N, 256)
+        attn_output, _ = self.self_attn(encoded_seq, encoded_seq, encoded_seq) # (1, N, 256)
+
+        pool_scores = self.pooling(attn_output).squeeze(-1) # (1, N)
+        pool_weights = torch.softmax(pool_scores, dim=1).unsqueeze(-1) # (1, N, 1)
+
+        user_vector = torch.sum(attn_output * pool_weights, dim=1) # (1, 256)
+
+        return user_vector, X, delta_t
     
 

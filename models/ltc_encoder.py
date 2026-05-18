@@ -30,7 +30,7 @@ class LTCEncoder(nn.Module):
         self.ltc = LTC(
             input_size=self.input_dim,
             units=wiring,
-            return_sequences=False,
+            return_sequences=True,
             batch_first=True,
             mixed_memory=mixed_memory,
             ode_unfolds=ode_unfolds,
@@ -62,9 +62,9 @@ class LTCEncoder(nn.Module):
 
         h0 = torch.zeros(batch_size, self.hidden_dim).to(X.device)
 
-        _, h_final = self.ltc(X_aug, h0)
+        outputs, h_final = self.ltc(X_aug, h0)
 
-        return h_final
+        return outputs
 
     # -------------------------
     # Parameter Debug Tools
