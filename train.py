@@ -194,7 +194,7 @@ def train_model(train_short, train_long,
     scorer = ItemScorer(joint_embedding).to(device)
 
     optimizer = optim.Adam(
-        list(joint_embedding.parameters())+
+        # list(joint_embedding.parameters())+
         list(short_model.parameters()) +
         list(long_model.parameters()) +
         list(fusion_gate.parameters()) +
@@ -258,8 +258,8 @@ def train_model(train_short, train_long,
                 # Negative Sampling
                 # -----------------------------
 
-                K = 10
-                POOL_SIZE = 100
+                K = 6
+                POOL_SIZE = 30
 
                 IMPRESSION_RATIO = 0.7
                 CATEGORY_RATIO = 0.3
@@ -405,7 +405,7 @@ def train_model(train_short, train_long,
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
-                list(joint_embedding.parameters()) +
+                # list(joint_embedding.parameters()) +
                 list(short_model.parameters()) +
                 list(long_model.parameters()) +
                 list(fusion_gate.parameters()) +
