@@ -12,12 +12,12 @@ class ItemScorer(nn.Module):
         super().__init__()
         self.joint_embedding = joint_embedding
         self.user_proj = nn.Linear(256, 256)
-        self.scorer = nn.Sequential(
-            nn.Linear(256 * 3, 256),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(256, 1)
-        )
+        # self.scorer = nn.Sequential(
+        #     nn.Linear(256 * 3, 256),
+        #     nn.ReLU(),
+        #     nn.Dropout(0.2),
+        #     nn.Linear(256, 1)
+        # )
 
     def forward(self, user_vec, candidate_news_ids, candidate_cat_ids):
         """
@@ -64,12 +64,22 @@ class ItemScorer(nn.Module):
 
         # ---- Ensure proper dims for bmm ----
         user_vec = self.user_proj(user_vec) # (B, D)
-        user_expand = user_vec.unsqueeze(1).expand(-1, news_vecs.size(1), -1)  # (B, M, D)
 
-        interaction = user_expand * news_vecs  # (B, M, D)
-        combined = torch.cat([user_expand, news_vecs, interaction], dim=-1)
+        # ---- MLP scoring layer ----
+        # user_expand = user_vec.unsqueeze(1).expand(-1, news_vecs.size(1), -1)  # (B, M, D)
 
-        scores = self.scorer(combined).squeeze(-1)  # (B, M)
+        # interaction = user_expand * news_vecs  # (B, M, D)
+        # combined = torch.cat([user_expand, news_vecs, interaction], dim=-1)
+
+        # scores = self.scorer(combined).squeeze(-1)  # (B, M)
+
+        # ---- Dot product scoring layer ----
+        user_vec = user_vec.unsqueeze(-1)  # (B, D, 1)
+
+        scores = torch.bmm(
+            news_vecs,
+            user_vec
+        ).squeeze(-1)  # (B, M)
 
         return scores, torch.softmax(scores, dim=1)
         
