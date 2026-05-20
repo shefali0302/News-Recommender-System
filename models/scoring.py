@@ -11,7 +11,7 @@ class ItemScorer(nn.Module):
     def __init__(self, joint_embedding):
         super().__init__()
         self.joint_embedding = joint_embedding
-        self.user_proj = nn.Linear(256, 256)
+        self.user_proj = nn.Linear(128, 256)
         # self.scorer = nn.Sequential(
         #     nn.Linear(256 * 3, 256),
         #     nn.ReLU(),
