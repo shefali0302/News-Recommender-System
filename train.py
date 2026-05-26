@@ -18,7 +18,6 @@ from models.embeddings import JointEmbedding
 from training.loss import compute_loss
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
 from training.experiment_util import create_experiment_folder
-from path_variables import DATASET, TRAIN_NEWS, TRAIN_BEHAVIORS, DEV_BEHAVIORS
 
 
 MODE = "full"
