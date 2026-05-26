@@ -9,8 +9,6 @@ from models.long_term import LongTermLTC
 from models.fusion import FusionGate
 from models.scoring import ItemScorer
 from train import evaluate_model
-from training.metrics import compute_mrr, compute_ndcg, compute_auc
-from path_variables import DATASET, TEST_NEWS, TEST_BEHAVIORS
 
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")

@@ -258,8 +258,8 @@ def train_model(train_short, train_long,
                 # Negative Sampling
                 # -----------------------------
 
-                K = 6
-                POOL_SIZE = 30
+                K = 8
+                POOL_SIZE = 50
 
                 IMPRESSION_RATIO = 0.7
                 CATEGORY_RATIO = 0.3
