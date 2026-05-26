@@ -25,7 +25,7 @@ MODE = "full"
 # options: "full", "short_only", "long_only", "no_gate"
 BATCH_SIZE = 64
 NUM_EPOCHS = 20
-LR = 0.001
+LR = 0.0005
 
 seed = 100
 random.seed(seed)
@@ -258,8 +258,8 @@ def train_model(train_short, train_long,
                 # Negative Sampling
                 # -----------------------------
 
-                K = 8
-                POOL_SIZE = 50
+                K = 6
+                POOL_SIZE = 30
 
                 IMPRESSION_RATIO = 0.7
                 CATEGORY_RATIO = 0.3
