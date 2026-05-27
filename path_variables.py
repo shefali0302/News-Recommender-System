@@ -5,7 +5,7 @@ DATA_PATH = os.path.join(BASE_DIR, "data")
 # =========================================
 # SELECT DATASET HERE
 # =========================================
-DATASET = "MINDsmall" # change to "MINDlarge" when needed
+DATASET = "MINDlarge" # change to "MINDlarge" when needed
 MODE= "train" # change to "test" when needed
 
 # =========================================
@@ -63,9 +63,9 @@ PREPROCESSED_PATH = os.path.join(DATA_PATH, "preprocessed")
 
 MIND_SMALL_PREPROCESSED_TRAIN = os.path.join(PREPROCESSED_PATH, "preprocessed_MINDsmall_train_train.pt")
 MIND_SMALL_PREPROCESSED_DEV   = os.path.join(PREPROCESSED_PATH, "preprocessed_MINDsmall_train_val.pt")
-MIND_SMALL_PREPROCESSED_TEST  = os.path.join(BASE_DIR, "preprocessed_MINDsmall_test.pt")
+MIND_SMALL_PREPROCESSED_TEST  = os.path.join(PREPROCESSED_PATH, "preprocessed_MINDsmall_test.pt")
 
-MIND_LARGE_PREPROCESSED_TRAIN = os.path.join(BASE_DIR, "preprocessed_MINDlarge.pt")
-MIND_LARGE_PREPROCESSED_DEV   = os.path.join(PREPROCESSED_PATH, "MINDlarge_dev_preprocessed.pt")
-MIND_LARGE_PREPROCESSED_TEST  = os.path.join(BASE_DIR, "preprocessed_MINDlarge_test.pt")
+MIND_LARGE_PREPROCESSED_TRAIN = os.path.join(PREPROCESSED_PATH, "preprocessed_MINDlarge_train.pt")
+MIND_LARGE_PREPROCESSED_DEV   = os.path.join(PREPROCESSED_PATH, "preprocessed_MINDlarge_val.pt")
+MIND_LARGE_PREPROCESSED_TEST  = os.path.join(PREPROCESSED_PATH, "preprocessed_MINDlarge_test.pt")
 

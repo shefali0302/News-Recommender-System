@@ -15,12 +15,17 @@ device = torch.device("cpu")
 print("Using device:", device)
 
 if __name__ == "__main__":
-    test_data = torch.load(pv.MIND_SMALL_PREPROCESSED_TEST, weights_only=False)
+    
+    if pv.DATASET == "MINDsmall":
+        test_data = torch.load(pv.MIND_SMALL_PREPROCESSED_TEST, weights_only=False)
+        train_data = torch.load(pv.MIND_SMALL_PREPROCESSED_TRAIN, weights_only=False)
+
+    elif pv.DATASET == "MINDlarge":
+        test_data = torch.load(pv.MIND_LARGE_PREPROCESSED_TEST, weights_only=False)
+        train_data = torch.load(pv.MIND_LARGE_PREPROCESSED_TRAIN, weights_only=False)
 
     short_term_data = test_data["short_term_data"]
     long_term_data = test_data["long_term_data"]
-
-    train_data = torch.load(pv.MIND_SMALL_PREPROCESSED_TRAIN, weights_only=False)
 
     news2idx = train_data["news2idx"]
     category2idx = train_data["category2idx"]

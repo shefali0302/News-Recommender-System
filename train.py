@@ -18,6 +18,7 @@ from models.embeddings import JointEmbedding
 from training.loss import compute_loss
 from training.metrics import compute_mrr, compute_ndcg, compute_auc
 from training.experiment_util import create_experiment_folder
+from path_variables import DATASET, TRAIN_BEHAVIORS, DEV_BEHAVIORS, TEST_BEHAVIORS, TRAIN_NEWS, DEV_NEWS, TEST_NEWS
 
 
 MODE = "full"
@@ -459,12 +460,13 @@ if __name__ == "__main__":
     MODE = "full"   # change this for ablation runs
     # options: "full", "short_only", "long_only", "no_gate"
 
-    train_data = load_data(pv.MIND_SMALL_PREPROCESSED_TRAIN )
-    dev_data = load_data(pv.MIND_SMALL_PREPROCESSED_DEV)
+    if pv.DATASET == "MINDsmall":
+        train_data = load_data(pv.MIND_SMALL_PREPROCESSED_TRAIN)
+        dev_data = load_data(pv.MIND_SMALL_PREPROCESSED_DEV)
 
-    #if DATASET == "MINDlarge":
-        #train_data = load_data(pv.MIND_LARGE_PREPROCESSED_TRAIN)
-        #dev_data = load_data(pv.MIND_LARGE_PREPROCESSED_DEV)
+    elif pv.DATASET == "MINDlarge":
+        train_data = load_data(pv.MIND_LARGE_PREPROCESSED_TRAIN)
+        dev_data = load_data(pv.MIND_LARGE_PREPROCESSED_DEV)
 
     train_short = train_data["short_term_data"]
     train_long = train_data["long_term_data"]
@@ -485,7 +487,7 @@ if __name__ == "__main__":
         "optimizer": "Adam",
         "batch_size": BATCH_SIZE,
         "device": str(device),
-        "dataset": "MINDsmall"
+        "dataset": pv.DATASET
     }
 
     exp_dir = create_experiment_folder(config)
